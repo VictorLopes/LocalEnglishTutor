@@ -1,0 +1,13 @@
+PySide6
+
+ollama
+faster-whisper
+kokoro-onnx
+onnxruntime
+sounddevice
+numpy
+Pillow
+scipy
+requests
+soundfile
+
