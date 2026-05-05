@@ -43,28 +43,40 @@ class TTSProcessor:
     def stop(self):
         sd.stop()
 
-    def speak(self, text, voice="af_sarah", on_finish=None):
+    def generate(self, text, voice="af_sarah"):
         if not self.kokoro:
             print("TTS not initialized.")
-            if on_finish: on_finish()
-            return
+            return None, None
         
         try:
-            self.stop() # Stop any current playback
             samples, sample_rate = self.kokoro.create(
                 text,
                 voice=voice,
                 speed=1.0,
                 lang="en-us"
             )
-            # Play directly to speakers
+            return samples, sample_rate
+        except Exception as e:
+            print(f"Error in TTS generation: {e}")
+            return None, None
+
+    def play_samples(self, samples, sample_rate, on_finish=None):
+        if samples is None:
+            if on_finish: on_finish()
+            return
+
+        try:
+            self.stop()
             sd.play(samples, sample_rate)
             if on_finish:
-                # We need to wait in a thread to call the callback
                 def wait_and_call():
                     sd.wait()
                     on_finish()
                 threading.Thread(target=wait_and_call, daemon=True).start()
         except Exception as e:
-            print(f"Error in TTS: {e}")
+            print(f"Error in TTS playback: {e}")
             if on_finish: on_finish()
+
+    def speak(self, text, voice="af_sarah", on_finish=None):
+        samples, sample_rate = self.generate(text, voice)
+        self.play_samples(samples, sample_rate, on_finish)
