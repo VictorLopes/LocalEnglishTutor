@@ -12,7 +12,7 @@ A privacy-focused, local AI-powered English tutor with a WhatsApp-inspired inter
 -   **Local LLM**: Powered by `Ollama` (using `Liquid Foundation Model 2.5`), ensuring your conversations stay private.
 -   **WhatsApp-Style UI**: Familiar and clean interface built with `PySide6`.
 -   **Real-time Indicators**: Visual feedback for "thinking", "recording", and "transcribing" states.
--   **Cross-Platform**: Built with Python and Qt, compatible with macOS, Linux, and Windows.
+-   **Cross-Platform**: Built with Python and Qt, compatible with macOS, Linux, and Windows (WSL2).
 
 ## Tech Stack 🛠️
 
