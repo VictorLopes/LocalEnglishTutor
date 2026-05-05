@@ -11,19 +11,18 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QFrame,
-    QSizePolicy,
 )
-from PySide6.QtCore import Qt, Signal, QSize, QRect, QObject
-from PySide6.QtGui import QPixmap, QPainter, QBrush, QColor, QFont, QIcon
-from PIL import Image
+from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtGui import QPixmap, QPainter, QBrush
 from chat_client import ChatClient
 from audio_processor import AudioProcessor
 from tts_processor import TTSProcessor
 
 
-# Signals class for thread safety
 class WorkerSignals(QObject):
-    add_message = Signal(str, str, object)  # text, sender, audio_data (tuple of samples, rate)
+    add_message = Signal(
+        str, str, object
+    )  # text, sender, audio_data (tuple of samples, rate)
     update_indicator = Signal(str, bool)  # text, visible
     audio_started = Signal(object)  # bubble object
     audio_reset = Signal(object)  # bubble object
@@ -41,7 +40,9 @@ ACCENT_COLOR = "#00a884"
 
 
 class MessageBubble(QFrame):
-    def __init__(self, text, sender="user", tts_processor=None, signals=None, audio_data=None):
+    def __init__(
+        self, text, sender="user", tts_processor=None, signals=None, audio_data=None
+    ):
         super().__init__()
         self.tts_processor = tts_processor
         self.signals = signals
@@ -122,18 +123,24 @@ class MessageBubble(QFrame):
             # Signal the parent to stop any other playing audio
             if self.signals:
                 self.signals.audio_started.emit(self)
-            
+
             def on_finish_callback():
                 if self.signals:
                     self.signals.audio_reset.emit(self)
-            
+
             if self.audio_data:
                 # Use pre-generated audio
                 samples, sample_rate = self.audio_data
-                self.tts_processor.play_samples(samples, sample_rate, on_finish=on_finish_callback)
+                self.tts_processor.play_samples(
+                    samples, sample_rate, on_finish=on_finish_callback
+                )
             else:
                 # Generate on the fly
-                threading.Thread(target=self.tts_processor.speak, args=(self.text,), kwargs={"on_finish": on_finish_callback}).start()
+                threading.Thread(
+                    target=self.tts_processor.speak,
+                    args=(self.text,),
+                    kwargs={"on_finish": on_finish_callback},
+                ).start()
 
     def stop_audio(self):
         if self.tts_processor:
@@ -168,7 +175,7 @@ class WhatsAppClone(QWidget):
         self.signals.set_inputs.connect(self.set_inputs_enabled)
 
         self.init_ui()
-        
+
         # Auto-scroll handling
         self.scroll.verticalScrollBar().rangeChanged.connect(self.scroll_to_bottom)
 
@@ -275,9 +282,13 @@ class WhatsAppClone(QWidget):
         self.entry.setEnabled(enabled)
         # Visual feedback via stylesheet
         if not enabled:
-            self.voice_btn.setStyleSheet(self.voice_btn.styleSheet() + "background-color: #555;")
+            self.voice_btn.setStyleSheet(
+                self.voice_btn.styleSheet() + "background-color: #555;"
+            )
         else:
-            self.voice_btn.setStyleSheet(self.voice_btn.styleSheet().replace("background-color: #555;", ""))
+            self.voice_btn.setStyleSheet(
+                self.voice_btn.styleSheet().replace("background-color: #555;", "")
+            )
 
     def _set_profile_pic(self):
         try:
@@ -301,7 +312,9 @@ class WhatsAppClone(QWidget):
             pass
 
     def add_message(self, text, sender="user", audio_data=None):
-        bubble = MessageBubble(text, sender, self.tts_processor, self.signals, audio_data)
+        bubble = MessageBubble(
+            text, sender, self.tts_processor, self.signals, audio_data
+        )
         self.chat_layout.insertWidget(self.chat_layout.count() - 1, bubble)
         return bubble
 
@@ -359,13 +372,19 @@ class WhatsAppClone(QWidget):
 
     def toggle_recording(self):
         if not self.is_recording:
-            self.is_recording = True
-            self.voice_btn.setText("⏹")
-            self.voice_btn.setStyleSheet(
-                self.voice_btn.styleSheet().replace(ACCENT_COLOR, "#ea0038")
-            )
-            self.signals.update_indicator.emit("Recording...", True)
-            self.audio_processor.start_recording()
+            try:
+                self.audio_processor.start_recording()
+                self.is_recording = True
+                self.voice_btn.setText("⏹")
+                self.voice_btn.setStyleSheet(
+                    self.voice_btn.styleSheet().replace(ACCENT_COLOR, "#ea0038")
+                )
+                self.signals.update_indicator.emit("Recording...", True)
+            except Exception as e:
+                print(f"Recording error: {e}")
+                self.signals.update_indicator.emit(f"⚠️ {str(e)}", True)
+                # Hide error after 3 seconds
+                threading.Timer(3.0, lambda: self.signals.update_indicator.emit("", False)).start()
         else:
             self.is_recording = False
             self.voice_btn.setText("🎤")

@@ -84,7 +84,18 @@ class TTSProcessor:
 
         try:
             self.stop()
-            sd.play(samples, sample_rate)
+            # Explicitly find a valid output device
+            # Prioritize the system default output device if valid
+            output_device = sd.default.device[1]
+            if output_device < 0:
+                devices = sd.query_devices()
+                output_device = next((i for i, d in enumerate(devices) if d['max_output_channels'] > 0), None)
+            
+            if output_device is not None:
+                sd.play(samples, sample_rate, device=output_device)
+            else:
+                print("No output device found.")
+                
             if on_finish:
                 def wait_and_call():
                     sd.wait()
