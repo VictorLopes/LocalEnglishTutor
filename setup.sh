@@ -13,7 +13,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     brew install portaudio python@3.12
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "Detected Linux. Installing PortAudio and Python 3.12..."
-    sudo apt-get update && sudo apt-get install -y libportaudio2 python3.12 python3.12-venv
+    sudo apt-get update && sudo apt-get install -y libportaudio2 pulseaudio alsa-utils libasound2-plugins python3.12 python3.12-venv
 else
     echo "Warning: Unsupported OS ($OSTYPE). Please ensure PortAudio and Python 3.12 are installed manually."
 fi
