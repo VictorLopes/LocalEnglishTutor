@@ -4,12 +4,14 @@ import os
 import requests
 import numpy as np
 import threading
+import json
 
 class TTSProcessor:
     def __init__(self, model_path="kokoro-v1.0.onnx", voices_path="voices-v1.0.bin"):
         self.model_path = model_path
         self.voices_path = voices_path
         self.kokoro = None
+        self.config = self._load_config()
         
         # Download models if they don't exist
         self._ensure_models_exist()
@@ -18,6 +20,16 @@ class TTSProcessor:
             self.kokoro = Kokoro(self.model_path, self.voices_path)
         except Exception as e:
             print(f"Error initializing Kokoro: {e}")
+
+    def _load_config(self):
+        config_path = "config.json"
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error loading config.json: {e}")
+        return {}
 
     def _ensure_models_exist(self):
         urls = {
@@ -43,17 +55,22 @@ class TTSProcessor:
     def stop(self):
         sd.stop()
 
-    def generate(self, text, voice="af_sarah"):
+    def generate(self, text, voice=None):
         if not self.kokoro:
             print("TTS not initialized.")
             return None, None
+        
+        # Use config with fallbacks
+        voice = voice or self.config.get("tts_voice", "af_sarah")
+        speed = self.config.get("tts_speed", 1.0)
+        lang = self.config.get("lang", "en-us")
         
         try:
             samples, sample_rate = self.kokoro.create(
                 text,
                 voice=voice,
-                speed=1.0,
-                lang="en-us"
+                speed=speed,
+                lang=lang
             )
             return samples, sample_rate
         except Exception as e:

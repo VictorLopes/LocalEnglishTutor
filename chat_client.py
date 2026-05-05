@@ -1,11 +1,24 @@
 import ollama
 import re
+import json
+import os
 from prompts import SYSTEM_PROMPT
 
 class ChatClient:
-    def __init__(self, model="sam860/lfm2.5:1.2b"):
-        self.model = model
+    def __init__(self, model=None):
+        self.config = self._load_config()
+        self.model = model or self.config.get("model", "sam860/lfm2.5:1.2b")
         self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    def _load_config(self):
+        config_path = "config.json"
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error loading config.json: {e}")
+        return {}
 
     def clean_text(self, text):
         # Remove Markdown bold/italic symbols

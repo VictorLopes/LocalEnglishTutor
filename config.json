@@ -1,0 +1,6 @@
+{
+    "model": "sam860/lfm2.5:1.2b",
+    "tts_speed": 0.8,
+    "tts_voice": "af_sarah",
+    "lang": "en-us"
+}
