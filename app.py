@@ -25,6 +25,8 @@ from tts_processor import TTSProcessor
 class WorkerSignals(QObject):
     add_message = Signal(str, str)  # text, sender
     update_indicator = Signal(str, bool)  # text, visible
+    audio_started = Signal(object)  # bubble object
+    audio_reset = Signal(object)  # bubble object
 
 
 # WhatsApp Colors
@@ -38,11 +40,13 @@ ACCENT_COLOR = "#00a884"
 
 
 class MessageBubble(QFrame):
-    def __init__(self, text, sender="user", tts_processor=None):
+    def __init__(self, text, sender="user", tts_processor=None, signals=None):
         super().__init__()
         self.tts_processor = tts_processor
+        self.signals = signals
         self.text = text
         self.sender = sender
+        self.is_playing = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 5, 10, 5)
@@ -58,16 +62,18 @@ class MessageBubble(QFrame):
         if sender == "ai":
             self.play_btn = QPushButton("▶")
             self.play_btn.setFixedSize(30, 30)
+            self.play_btn.setCursor(Qt.PointingHandCursor)
             self.play_btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {ACCENT_COLOR};
                     color: white;
                     border-radius: 15px;
                     font-size: 14px;
+                    border: none;
                 }}
                 QPushButton:hover {{ background-color: #008f70; }}
             """)
-            self.play_btn.clicked.connect(self.play_audio)
+            self.play_btn.clicked.connect(self.toggle_audio)
             content_layout.addWidget(self.play_btn)
 
         self.label = QLabel(text)
@@ -101,9 +107,36 @@ class MessageBubble(QFrame):
                 f"background-color: {AI_BUBBLE}; border-radius: 15px;"
             )
 
+    def toggle_audio(self):
+        if self.is_playing:
+            self.stop_audio()
+        else:
+            self.play_audio()
+
     def play_audio(self):
         if self.tts_processor:
-            threading.Thread(target=self.tts_processor.speak, args=(self.text,)).start()
+            self.is_playing = True
+            self.play_btn.setText("⏸")
+            # Signal the parent to stop any other playing audio
+            if self.signals:
+                self.signals.audio_started.emit(self)
+            
+            def on_finish_callback():
+                if self.signals:
+                    self.signals.audio_reset.emit(self)
+            
+            threading.Thread(target=self.tts_processor.speak, args=(self.text,), kwargs={"on_finish": on_finish_callback}).start()
+
+    def stop_audio(self):
+        if self.tts_processor:
+            self.tts_processor.stop()
+            # The on_finish_callback from the thread will eventually trigger audio_reset
+            # but we can also do it immediately for better responsiveness
+            self.reset_ui()
+
+    def reset_ui(self):
+        self.is_playing = False
+        self.play_btn.setText("▶")
 
 
 class WhatsAppClone(QWidget):
@@ -122,8 +155,13 @@ class WhatsAppClone(QWidget):
         self.signals = WorkerSignals()
         self.signals.add_message.connect(self.add_message)
         self.signals.update_indicator.connect(self.set_indicator)
+        self.signals.audio_started.connect(self.handle_audio_start)
+        self.signals.audio_reset.connect(self.handle_audio_reset)
 
         self.init_ui()
+        
+        # Auto-scroll handling
+        self.scroll.verticalScrollBar().rangeChanged.connect(self.scroll_to_bottom)
 
         # Start initial greeting
         threading.Thread(target=self.initial_greeting).start()
@@ -237,12 +275,27 @@ class WhatsAppClone(QWidget):
             pass
 
     def add_message(self, text, sender="user"):
-        bubble = MessageBubble(text, sender, self.tts_processor)
+        bubble = MessageBubble(text, sender, self.tts_processor, self.signals)
         self.chat_layout.insertWidget(self.chat_layout.count() - 1, bubble)
-        # Scroll to bottom
+
+    def scroll_to_bottom(self):
         self.scroll.verticalScrollBar().setValue(
             self.scroll.verticalScrollBar().maximum()
         )
+
+    def handle_audio_start(self, active_bubble):
+        # Stop all other bubbles that might be playing
+        for i in range(self.chat_layout.count()):
+            item = self.chat_layout.itemAt(i)
+            if item and item.widget():
+                widget = item.widget()
+                if isinstance(widget, MessageBubble) and widget != active_bubble:
+                    if widget.sender == "ai" and widget.is_playing:
+                        widget.reset_ui()
+
+    def handle_audio_reset(self, bubble):
+        if isinstance(bubble, MessageBubble):
+            bubble.reset_ui()
 
     def set_indicator(self, text, visible):
         self.indicator_label.setText(text)
