@@ -27,6 +27,7 @@ class WorkerSignals(QObject):
     update_indicator = Signal(str, bool)  # text, visible
     audio_started = Signal(object)  # bubble object
     audio_reset = Signal(object)  # bubble object
+    set_inputs = Signal(bool)
 
 
 # WhatsApp Colors
@@ -164,6 +165,7 @@ class WhatsAppClone(QWidget):
         self.signals.update_indicator.connect(self.set_indicator)
         self.signals.audio_started.connect(self.handle_audio_start)
         self.signals.audio_reset.connect(self.handle_audio_reset)
+        self.signals.set_inputs.connect(self.set_inputs_enabled)
 
         self.init_ui()
         
@@ -178,9 +180,7 @@ class WhatsAppClone(QWidget):
         if sender == "ai":
             # Automatically play audio for AI messages
             bubble.play_audio()
-        
-        # Re-enable inputs after AI is done
-        if sender == "ai":
+            # Re-enable inputs after AI is done
             self.set_inputs_enabled(True)
 
     def init_ui(self):
@@ -273,8 +273,7 @@ class WhatsAppClone(QWidget):
     def set_inputs_enabled(self, enabled):
         self.voice_btn.setEnabled(enabled)
         self.entry.setEnabled(enabled)
-        opacity = 1.0 if enabled else 0.5
-        self.voice_btn.setWindowOpacity(opacity) # Visual feedback
+        # Visual feedback via stylesheet
         if not enabled:
             self.voice_btn.setStyleSheet(self.voice_btn.styleSheet() + "background-color: #555;")
         else:
@@ -333,7 +332,7 @@ class WhatsAppClone(QWidget):
             self.indicator_label.hide()
 
     def initial_greeting(self):
-        self.set_inputs_enabled(False)
+        self.signals.set_inputs.emit(False)
         self.signals.update_indicator.emit("Connecting to AI Tutor...", True)
         greeting = self.chat_client.get_initial_greeting()
         self.signals.update_indicator.emit("AI is recording...", True)
@@ -350,7 +349,7 @@ class WhatsAppClone(QWidget):
         threading.Thread(target=self.process_ai_response, args=(text,)).start()
 
     def process_ai_response(self, text):
-        self.set_inputs_enabled(False)
+        self.signals.set_inputs.emit(False)
         self.signals.update_indicator.emit("AI is thinking...", True)
         response = self.chat_client.get_response(text)
         self.signals.update_indicator.emit("AI is recording...", True)
@@ -386,7 +385,7 @@ class WhatsAppClone(QWidget):
             self.signals.add_message.emit(text, "user", None)
             self.process_ai_response(text)
         else:
-            self.set_inputs_enabled(True)
+            self.signals.set_inputs.emit(True)
             print("No text transcribed.")
 
 
