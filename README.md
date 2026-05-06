@@ -34,7 +34,7 @@ This ensures the AI Tutor uses the appropriate vocabulary, grammar complexity, a
 
 -   **UI Framework**: PySide6 (Qt for Python)
 -   **LLM Engine**: [Ollama](https://ollama.com/)
--   **Speech-to-Text**: [faster-whisper](https://github.com/SYSTRONICS/faster-whisper) (Whisper Base model)
+-   **Speech-to-Text**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (Whisper Base model)
 -   **Text-to-Speech**: [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx)
 
 > [!TIP]
