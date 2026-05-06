@@ -276,6 +276,12 @@ class ChatScreen(QWidget):
         main_layout.addWidget(input_bar)
 
     def go_back(self):
+        if self.tts_processor:
+            self.tts_processor.stop()
+        if self.is_recording:
+            self.audio_processor.stop_recording()
+            self.is_recording = False
+
         main_window = self.window()
         if hasattr(main_window, "stack"):
             main_window.stack.setCurrentIndex(1)
