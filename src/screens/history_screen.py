@@ -52,10 +52,8 @@ class ConversationItem(QFrame):
         font.setPointSize(16)
         font.setBold(True)
         name_label.setFont(font)
-        
-        name_label.setStyleSheet(
-            f"color: {TEXT_COLOR}; border: none;"
-        )
+
+        name_label.setStyleSheet(f"color: {TEXT_COLOR}; border: none;")
         name_label.setFixedWidth(250)
         metrics = name_label.fontMetrics()
         elided = metrics.elidedText(
@@ -97,17 +95,35 @@ class ConversationItem(QFrame):
         info_layout.addWidget(last_msg_label)
 
         if self.note:
-            note_label = QLabel(f"📝 {self.note}")
-            note_label.setStyleSheet(
-                f"color: {ACCENT_COLOR}; font-size: 11px; font-style: italic; border: none; padding-top: 9px"
+            note_container = QHBoxLayout()
+            note_container.setSpacing(5)
+            note_container.setContentsMargins(0, 5, 0, 0)
+
+            note_icon = QLabel()
+            screens_dir = os.path.dirname(os.path.abspath(__file__))
+            root_dir = os.path.dirname(os.path.dirname(screens_dir))
+            icon_path = os.path.join(root_dir, "assets", "icons", "note.png")
+            pixmap = QPixmap(icon_path).scaled(
+                14, 14, Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
-            note_label.setFixedWidth(250)
+            note_icon.setPixmap(pixmap)
+            note_icon.setFixedSize(14, 14)
+            note_icon.setStyleSheet("border: none; background: transparent;")
+            note_container.addWidget(note_icon)
+
+            note_label = QLabel(self.note)
+            note_label.setStyleSheet(
+                f"color: {ACCENT_COLOR}; font-size: 11px; font-style: italic; border: none;"
+            )
+            note_label.setFixedWidth(230)
             metrics = note_label.fontMetrics()
             elided = metrics.elidedText(
                 note_label.text(), Qt.ElideRight, note_label.width()
             )
             note_label.setText(elided)
-            info_layout.addWidget(note_label)
+            note_container.addWidget(note_label)
+            note_container.addStretch()
+            info_layout.addLayout(note_container)
 
         layout.addLayout(info_layout)
 
