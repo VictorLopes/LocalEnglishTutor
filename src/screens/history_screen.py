@@ -15,9 +15,10 @@ from constants import BG_COLOR, HEADER_COLOR, TEXT_COLOR, ACCENT_COLOR, SECONDAR
 
 
 class ConversationItem(QFrame):
-    def __init__(self, conv_id, level, subject, last_msg, updated_at, on_click):
+    def __init__(self, conv_id, level, subject, last_msg, updated_at, note, on_click):
         super().__init__()
         self.conv_id = conv_id
+        self.note = note
         self.setCursor(Qt.PointingHandCursor)
         self.setFixedHeight(80)
         self.setStyleSheet(f"""
@@ -81,6 +82,18 @@ class ConversationItem(QFrame):
         last_msg_label.setText(elided)
 
         info_layout.addWidget(last_msg_label)
+
+        if self.note:
+            note_label = QLabel(f"📝 {self.note}")
+            note_label.setStyleSheet(
+                f"color: {ACCENT_COLOR}; font-size: 11px; font-style: italic; border: none;"
+            )
+            note_label.setFixedWidth(250)
+            metrics = note_label.fontMetrics()
+            elided = metrics.elidedText(note_label.text(), Qt.ElideRight, note_label.width())
+            note_label.setText(elided)
+            info_layout.addWidget(note_label)
+
         layout.addLayout(info_layout)
 
         self.on_click = on_click
@@ -131,6 +144,7 @@ class HistoryScreen(QWidget):
         self.db = db
         self.on_new_conv = on_new_conv
         self.on_select_conv = on_select_conv
+        self.showing_archived = False
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
         self.init_ui()
@@ -154,6 +168,25 @@ class HistoryScreen(QWidget):
         header_layout.addWidget(title_label)
 
         header_layout.addStretch()
+
+        # Archive Toggle
+        self.archive_toggle_btn = QPushButton("Show Archived")
+        self.archive_toggle_btn.setFixedSize(120, 30)
+        self.archive_toggle_btn.setCursor(Qt.PointingHandCursor)
+        self.archive_toggle_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {SECONDARY_TEXT};
+                border: 1px solid {SECONDARY_TEXT}66;
+                border-radius: 15px;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: rgba(255, 255, 255, 0.05);
+            }}
+        """)
+        self.archive_toggle_btn.clicked.connect(self.toggle_archived_view)
+        header_layout.addWidget(self.archive_toggle_btn)
 
         # New Conversation Button
         new_btn = QPushButton()
@@ -194,6 +227,16 @@ class HistoryScreen(QWidget):
 
         self.refresh_list()
 
+    def toggle_archived_view(self):
+        self.showing_archived = not self.showing_archived
+        if self.showing_archived:
+            self.archive_toggle_btn.setText("Show Active")
+            self.archive_toggle_btn.setStyleSheet(self.archive_toggle_btn.styleSheet().replace(SECONDARY_TEXT, ACCENT_COLOR))
+        else:
+            self.archive_toggle_btn.setText("Show Archived")
+            self.archive_toggle_btn.setStyleSheet(self.archive_toggle_btn.styleSheet().replace(ACCENT_COLOR, SECONDARY_TEXT))
+        self.refresh_list()
+
     def refresh_list(self):
         # Clear existing
         while self.list_layout.count() > 1:
@@ -201,10 +244,10 @@ class HistoryScreen(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        conversations = self.db.get_conversations()
+        conversations = self.db.get_conversations(archived=self.showing_archived)
         for conv in conversations:
-            # (id, level, subject, last_message, updated_at)
+            # (id, level, subject, last_message, updated_at, is_archived, note)
             item = ConversationItem(
-                conv[0], conv[1], conv[2], conv[3], conv[4], self.on_select_conv
+                conv[0], conv[1], conv[2], conv[3], conv[4], conv[6], self.on_select_conv
             )
             self.list_layout.insertWidget(self.list_layout.count() - 1, item)

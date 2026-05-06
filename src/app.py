@@ -69,10 +69,9 @@ class MainWindow(QWidget):
 
     def open_existing_conversation(self, conv_id):
         # Get conv details from DB
-        conversations = self.db.get_conversations()
-        conv = next((c for c in conversations if c[0] == conv_id), None)
+        conv = self.db.get_conversation(conv_id)
         if conv:
-            # (id, level, subject, last_message, updated_at)
+            # (id, level, subject, last_message, updated_at, is_archived, note)
             self.selected_level = conv[1]
             self.selected_subject = conv[2]
             self.chat_screen = ChatScreen(

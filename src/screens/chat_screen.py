@@ -10,6 +10,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QFrame,
+    QMenu,
+    QInputDialog,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, Signal, QObject, QSize
 from PySide6.QtGui import QPixmap, QPainter, QBrush, QIcon
@@ -62,7 +65,7 @@ class MessageBubble(QFrame):
 
         if sender == "ai":
             self.play_btn = QPushButton()
-            
+
             # Get icon path
             screens_dir = os.path.dirname(os.path.abspath(__file__))
             src_dir = os.path.dirname(screens_dir)
@@ -70,7 +73,7 @@ class MessageBubble(QFrame):
             icon_path = os.path.join(root_dir, "assets", "icons", "start.png")
             self.play_btn.setIcon(QIcon(icon_path))
             self.play_btn.setIconSize(QSize(18, 18))
-            
+
             self.play_btn.setFixedSize(30, 30)
             self.play_btn.setCursor(Qt.PointingHandCursor)
             self.play_btn.setStyleSheet(f"""
@@ -125,7 +128,7 @@ class MessageBubble(QFrame):
     def play_audio(self):
         if self.tts_processor:
             self.is_playing = True
-            
+
             screens_dir = os.path.dirname(os.path.abspath(__file__))
             src_dir = os.path.dirname(screens_dir)
             root_dir = os.path.dirname(src_dir)
@@ -189,7 +192,7 @@ class ChatScreen(QWidget):
 
         self.init_ui()
         self.scroll.verticalScrollBar().rangeChanged.connect(self.scroll_to_bottom)
-        
+
         if self.conversation_id:
             self.load_existing_conversation()
         else:
@@ -236,14 +239,14 @@ class ChatScreen(QWidget):
         header_layout.addStretch()
 
         back_btn = QPushButton()
-        
+
         screens_dir = os.path.dirname(os.path.abspath(__file__))
         src_dir = os.path.dirname(screens_dir)
         root_dir = os.path.dirname(src_dir)
         icon_path = os.path.join(root_dir, "assets", "icons", "back.png")
         back_btn.setIcon(QIcon(icon_path))
         back_btn.setIconSize(QSize(24, 24))
-        
+
         back_btn.setFixedSize(40, 40)
         back_btn.setCursor(Qt.PointingHandCursor)
         back_btn.setStyleSheet(f"""
@@ -255,6 +258,25 @@ class ChatScreen(QWidget):
         """)
         back_btn.clicked.connect(self.go_back)
         header_layout.addWidget(back_btn)
+
+        # Menu button (Ellipsis)
+        self.menu_btn = QPushButton()
+        screens_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(os.path.dirname(screens_dir))
+        icon_path = os.path.join(root_dir, "assets", "icons", "ellipsis.png")
+        self.menu_btn.setIcon(QIcon(icon_path))
+        self.menu_btn.setIconSize(QSize(24, 24))
+        self.menu_btn.setFixedSize(40, 40)
+        self.menu_btn.setCursor(Qt.PointingHandCursor)
+        self.menu_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+            }}
+            QPushButton:hover {{ background-color: rgba(255, 255, 255, 0.1); border-radius: 20px; }}
+        """)
+        self.menu_btn.clicked.connect(self.show_menu)
+        header_layout.addWidget(self.menu_btn)
 
         main_layout.addWidget(header)
 
@@ -296,14 +318,14 @@ class ChatScreen(QWidget):
         input_layout.addWidget(self.entry)
 
         self.voice_btn = QPushButton()
-        
+
         screens_dir = os.path.dirname(os.path.abspath(__file__))
         src_dir = os.path.dirname(screens_dir)
         root_dir = os.path.dirname(src_dir)
         icon_path = os.path.join(root_dir, "assets", "icons", "microphone.png")
         self.voice_btn.setIcon(QIcon(icon_path))
         self.voice_btn.setIconSize(QSize(24, 24))
-        
+
         self.voice_btn.setFixedSize(45, 45)
         self.voice_btn.setStyleSheet(f"""
             QPushButton {{
@@ -316,6 +338,71 @@ class ChatScreen(QWidget):
         input_layout.addWidget(self.voice_btn)
 
         main_layout.addWidget(input_bar)
+
+    def show_menu(self):
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {HEADER_COLOR};
+                color: {TEXT_COLOR};
+                border: 1px solid {SECONDARY_TEXT}33;
+            }}
+            QMenu::item {{
+                padding: 8px 25px;
+            }}
+            QMenu::item:selected {{
+                background-color: {ACCENT_COLOR};
+            }}
+        """)
+
+        # Get current state
+        conv_data = self.db.get_conversation(self.conversation_id)
+        is_archived = conv_data[5] if conv_data else 0
+
+        archive_text = (
+            "Unarchive conversation" if is_archived else "Archive conversation"
+        )
+
+        archive_action = menu.addAction(archive_text)
+        note_action = menu.addAction("Make a note")
+        menu.addSeparator()
+        delete_action = menu.addAction("Delete conversation")
+
+        action = menu.exec(self.menu_btn.mapToGlobal(self.menu_btn.rect().bottomLeft()))
+
+        if action == archive_action:
+            self.db.archive_conversation(self.conversation_id, not is_archived)
+            self.go_back()
+        elif action == note_action:
+            self.make_note()
+        elif action == delete_action:
+            self.confirm_delete()
+
+    def make_note(self):
+        conv_data = self.db.get_conversation(self.conversation_id)
+        current_note = conv_data[6] if conv_data else ""
+
+        note, ok = QInputDialog.getMultiLineText(
+            self,
+            "Conversation Note",
+            "Enter your note for this conversation:",
+            current_note,
+        )
+        if ok:
+            self.db.update_note(self.conversation_id, note)
+
+    def confirm_delete(self):
+        reply = QMessageBox.question(
+            self,
+            "Delete Conversation",
+            "Are you sure you want to delete this conversation? This action cannot be undone.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+
+        if reply == QMessageBox.Yes:
+            self.db.delete_conversation(self.conversation_id)
+            self.go_back()
 
     def go_back(self):
         if self.tts_processor:
@@ -367,7 +454,7 @@ class ChatScreen(QWidget):
     def add_message(self, text, sender="user", audio_data=None, save_to_db=True):
         if save_to_db and self.conversation_id:
             self.db.add_message(self.conversation_id, text, sender)
-            
+
         bubble = MessageBubble(
             text, sender, self.tts_processor, self.signals, audio_data
         )
@@ -402,11 +489,11 @@ class ChatScreen(QWidget):
     def initial_greeting(self):
         self.signals.set_inputs.emit(False)
         self.signals.update_indicator.emit("Connecting to AI Tutor...", True)
-        
+
         # Create conversation in DB if not exists
         if not self.conversation_id:
             self.conversation_id = self.db.create_conversation(self.level, self.subject)
-            
+
         greeting = self.chat_client.get_initial_greeting()
         self.signals.update_indicator.emit("AI is recording...", True)
         samples, rate = self.tts_processor.generate(greeting)
@@ -435,13 +522,13 @@ class ChatScreen(QWidget):
             try:
                 self.audio_processor.start_recording()
                 self.is_recording = True
-                
+
                 screens_dir = os.path.dirname(os.path.abspath(__file__))
                 src_dir = os.path.dirname(screens_dir)
                 root_dir = os.path.dirname(src_dir)
                 icon_path = os.path.join(root_dir, "assets", "icons", "stop.png")
                 self.voice_btn.setIcon(QIcon(icon_path))
-                
+
                 self.voice_btn.setStyleSheet(
                     self.voice_btn.styleSheet().replace(ACCENT_COLOR, "#ea0038")
                 )
@@ -454,13 +541,13 @@ class ChatScreen(QWidget):
                 ).start()
         else:
             self.is_recording = False
-            
+
             screens_dir = os.path.dirname(os.path.abspath(__file__))
             src_dir = os.path.dirname(screens_dir)
             root_dir = os.path.dirname(src_dir)
             icon_path = os.path.join(root_dir, "assets", "icons", "microphone.png")
             self.voice_btn.setIcon(QIcon(icon_path))
-            
+
             self.voice_btn.setStyleSheet(
                 self.voice_btn.styleSheet().replace("#ea0038", ACCENT_COLOR)
             )

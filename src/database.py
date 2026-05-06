@@ -17,9 +17,20 @@ class Database:
                 level TEXT,
                 subject TEXT,
                 last_message TEXT,
-                updated_at DATETIME
+                updated_at DATETIME,
+                is_archived INTEGER DEFAULT 0,
+                note TEXT DEFAULT ""
             )
         """)
+        
+        # Check if columns exist for existing databases
+        cursor.execute("PRAGMA table_info(conversations)")
+        columns = [column[1] for column in cursor.fetchall()]
+        if "is_archived" not in columns:
+            cursor.execute("ALTER TABLE conversations ADD COLUMN is_archived INTEGER DEFAULT 0")
+        if "note" not in columns:
+            cursor.execute("ALTER TABLE conversations ADD COLUMN note TEXT DEFAULT ''")
+            
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,10 +66,36 @@ class Database:
         )
         self.conn.commit()
 
-    def get_conversations(self):
+    def get_conversations(self, archived=False):
         cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM conversations ORDER BY updated_at DESC")
+        is_archived = 1 if archived else 0
+        cursor.execute(
+            "SELECT * FROM conversations WHERE is_archived = ? ORDER BY updated_at DESC",
+            (is_archived,)
+        )
         return cursor.fetchall()
+
+    def get_conversation(self, conversation_id):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM conversations WHERE id = ?", (conversation_id,))
+        return cursor.fetchone()
+
+    def archive_conversation(self, conversation_id, archived=True):
+        cursor = self.conn.cursor()
+        is_archived = 1 if archived else 0
+        cursor.execute(
+            "UPDATE conversations SET is_archived = ? WHERE id = ?",
+            (is_archived, conversation_id)
+        )
+        self.conn.commit()
+
+    def update_note(self, conversation_id, note):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "UPDATE conversations SET note = ? WHERE id = ?",
+            (note, conversation_id)
+        )
+        self.conn.commit()
 
     def get_messages(self, conversation_id):
         cursor = self.conn.cursor()
