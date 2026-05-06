@@ -58,10 +58,11 @@ class SelectionScreen(QWidget):
         main_layout.addLayout(header_layout)
         main_layout.addSpacing(20)
 
-        # Scrollable area for options
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("border: none; background: transparent;")
+        # Scroll Area
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setStyleSheet("border: none; background: transparent;")
         
         self.container = QWidget()
         self.container.setStyleSheet("background: transparent;")
@@ -72,8 +73,8 @@ class SelectionScreen(QWidget):
         if not is_grid:
             self.options_layout.addStretch() # Push everything up
 
-        scroll.setWidget(self.container)
-        main_layout.addWidget(scroll)
+        self.scroll.setWidget(self.container)
+        main_layout.addWidget(self.scroll)
 
         self.update_options(options, on_select)
 
@@ -93,10 +94,19 @@ class SelectionScreen(QWidget):
             btn.setCursor(Qt.PointingHandCursor)
             btn.setFixedHeight(60)
             
-            # Elide text
-            max_width = 150 if self.is_grid else 300
+            # Use fixed width to prevent layout expansion
+            btn_width = 175 if self.is_grid else 360
+            btn.setFixedWidth(btn_width)
+            
+            # Set font explicitly for accurate measurement
+            font = btn.font()
+            font.setPointSize(16)
+            btn.setFont(font)
+            
+            # Elide text based on available internal space (accounting for padding)
+            max_text_width = btn_width - 20 
             metrics = btn.fontMetrics()
-            elided_text = metrics.elidedText(option, Qt.ElideRight, max_width)
+            elided_text = metrics.elidedText(option, Qt.ElideRight, max_text_width)
             btn.setText(elided_text)
             btn.setToolTip(option) if elided_text != option else None
             
@@ -105,7 +115,6 @@ class SelectionScreen(QWidget):
                     background-color: {HEADER_COLOR};
                     color: {TEXT_COLOR};
                     border-radius: 10px;
-                    font-size: 16px;
                     border: 1px solid {SECONDARY_TEXT};
                     padding: 0 10px;
                     text-align: {"center" if self.is_grid else "left"};

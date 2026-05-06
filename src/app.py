@@ -18,7 +18,7 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AI English Tutor")
-        self.resize(420, 750)
+        self.setFixedSize(450, 700)
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
         self.db = Database()

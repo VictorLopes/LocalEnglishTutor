@@ -47,8 +47,14 @@ class ConversationItem(QFrame):
 
         title_layout = QHBoxLayout()
         name_label = QLabel(f"{level} - {subject}")
+        # Set font explicitly for accurate elision measurement
+        font = name_label.font()
+        font.setPointSize(16)
+        font.setBold(True)
+        name_label.setFont(font)
+        
         name_label.setStyleSheet(
-            f"color: {TEXT_COLOR}; font-size: 16px; font-weight: bold; border: none;"
+            f"color: {TEXT_COLOR}; border: none;"
         )
         name_label.setFixedWidth(250)
         metrics = name_label.fontMetrics()
@@ -221,6 +227,8 @@ class HistoryScreen(QWidget):
         # Scroll Area
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scroll.setStyleSheet("border: none; background: transparent;")
 
         self.container = QWidget()
