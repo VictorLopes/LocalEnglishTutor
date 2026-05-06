@@ -1,3 +1,4 @@
+from PySide6.QtGui import QIcon
 import sys
 import json
 import os
@@ -19,6 +20,11 @@ class MainWindow(QWidget):
         super().__init__()
         self.setWindowTitle("AI English Tutor")
         self.setFixedSize(450, 700)
+
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(root_dir, "profile.jpg")
+        self.setWindowIcon(QIcon(icon_path))
+
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
         self.db = Database()

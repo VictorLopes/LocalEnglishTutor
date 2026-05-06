@@ -2,19 +2,23 @@
 
 A privacy-focused, local AI-powered English tutor with a WhatsApp-inspired interface. Speak or type to interact with your AI tutor, featuring high-quality voice transcription and synthesis—all running locally on your machine.
 
-<p align="center">
-  <img src="images/app.gif" width="450" alt="App Demo">
-</p>
-
 ## Features 🚀
 
+-   **Conversation History**: Persistent storage for all your practice sessions using SQLite.
+-   **Conversation Management**: Easily **Delete**, **Archive**, or add **Notes** to your sessions via a dedicated menu.
 -   **Adaptive Learning**: Supports all CEFR levels (A1 to C2) with context-aware responses and corrections.
 -   **Voice-First Interaction**: Transcribe your speech in real-time using `faster-whisper`.
 -   **Natural Voice Synthesis**: High-quality local TTS using `kokoro-onnx` for a human-like tutoring experience.
--   **Local LLM**: Powered by `Ollama` (using `Liquid Foundation Model 2.5`), ensuring your conversations stay private.
+-   **Local LLM**: Powered by `Ollama`, ensuring your conversations stay private.
 -   **WhatsApp-Style UI**: Familiar and clean interface built with `PySide6`.
 -   **Real-time Indicators**: Visual feedback for "thinking", "recording", and "transcribing" states.
--   **Cross-Platform**: Built with Python and Qt, compatible with macOS, Linux, and Windows (WSL2).
+
+<p align="center">
+  <img src="images/gif01.gif" width="450" alt="History Demo">
+</p>
+<p align="center">
+  <img src="images/gif02.gif" width="450" alt="Management Demo">
+</p>
 
 ## Personalized Learning 🎯
 
