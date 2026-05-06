@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QFrame,
 )
-from PySide6.QtCore import Qt, Signal, QObject
-from PySide6.QtGui import QPixmap, QPainter, QBrush
+from PySide6.QtCore import Qt, Signal, QObject, QSize
+from PySide6.QtGui import QPixmap, QPainter, QBrush, QIcon
 from chat_client import ChatClient
 from audio_processor import AudioProcessor
 from tts_processor import TTSProcessor
@@ -61,7 +61,16 @@ class MessageBubble(QFrame):
         content_layout = QHBoxLayout()
 
         if sender == "ai":
-            self.play_btn = QPushButton("▶")
+            self.play_btn = QPushButton()
+            
+            # Get icon path
+            screens_dir = os.path.dirname(os.path.abspath(__file__))
+            src_dir = os.path.dirname(screens_dir)
+            root_dir = os.path.dirname(src_dir)
+            icon_path = os.path.join(root_dir, "assets", "icons", "start.png")
+            self.play_btn.setIcon(QIcon(icon_path))
+            self.play_btn.setIconSize(QSize(18, 18))
+            
             self.play_btn.setFixedSize(30, 30)
             self.play_btn.setCursor(Qt.PointingHandCursor)
             self.play_btn.setStyleSheet(f"""
@@ -69,7 +78,6 @@ class MessageBubble(QFrame):
                     background-color: {ACCENT_COLOR};
                     color: white;
                     border-radius: 15px;
-                    font-size: 14px;
                     border: none;
                 }}
                 QPushButton:hover {{ background-color: #008f70; }}
@@ -117,7 +125,12 @@ class MessageBubble(QFrame):
     def play_audio(self):
         if self.tts_processor:
             self.is_playing = True
-            self.play_btn.setText("⏸")
+            
+            screens_dir = os.path.dirname(os.path.abspath(__file__))
+            src_dir = os.path.dirname(screens_dir)
+            root_dir = os.path.dirname(src_dir)
+            icon_path = os.path.join(root_dir, "assets", "icons", "pause.png")
+            self.play_btn.setIcon(QIcon(icon_path))
             if self.signals:
                 self.signals.audio_started.emit(self)
 
@@ -144,7 +157,11 @@ class MessageBubble(QFrame):
 
     def reset_ui(self):
         self.is_playing = False
-        self.play_btn.setText("▶")
+        screens_dir = os.path.dirname(os.path.abspath(__file__))
+        src_dir = os.path.dirname(screens_dir)
+        root_dir = os.path.dirname(src_dir)
+        icon_path = os.path.join(root_dir, "assets", "icons", "start.png")
+        self.play_btn.setIcon(QIcon(icon_path))
 
 
 class ChatScreen(QWidget):
@@ -205,17 +222,23 @@ class ChatScreen(QWidget):
         header_layout.addLayout(info_layout)
         header_layout.addStretch()
 
-        back_btn = QPushButton("←")
+        back_btn = QPushButton()
+        
+        screens_dir = os.path.dirname(os.path.abspath(__file__))
+        src_dir = os.path.dirname(screens_dir)
+        root_dir = os.path.dirname(src_dir)
+        icon_path = os.path.join(root_dir, "assets", "icons", "back.png")
+        back_btn.setIcon(QIcon(icon_path))
+        back_btn.setIconSize(QSize(24, 24))
+        
         back_btn.setFixedSize(40, 40)
         back_btn.setCursor(Qt.PointingHandCursor)
         back_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                color: {TEXT_COLOR};
-                font-size: 24px;
                 border: none;
             }}
-            QPushButton:hover {{ color: {ACCENT_COLOR}; }}
+            QPushButton:hover {{ background-color: rgba(255, 255, 255, 0.1); border-radius: 20px; }}
         """)
         back_btn.clicked.connect(self.go_back)
         header_layout.addWidget(back_btn)
@@ -259,14 +282,20 @@ class ChatScreen(QWidget):
         self.entry.returnPressed.connect(self.send_text_message)
         input_layout.addWidget(self.entry)
 
-        self.voice_btn = QPushButton("🎤")
+        self.voice_btn = QPushButton()
+        
+        screens_dir = os.path.dirname(os.path.abspath(__file__))
+        src_dir = os.path.dirname(screens_dir)
+        root_dir = os.path.dirname(src_dir)
+        icon_path = os.path.join(root_dir, "assets", "icons", "microphone.png")
+        self.voice_btn.setIcon(QIcon(icon_path))
+        self.voice_btn.setIconSize(QSize(24, 24))
+        
         self.voice_btn.setFixedSize(45, 45)
         self.voice_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ACCENT_COLOR};
-                color: white;
                 border-radius: 22px;
-                font-size: 20px;
             }}
             QPushButton:hover {{ background-color: #008f70; }}
         """)
@@ -385,7 +414,13 @@ class ChatScreen(QWidget):
             try:
                 self.audio_processor.start_recording()
                 self.is_recording = True
-                self.voice_btn.setText("⏹")
+                
+                screens_dir = os.path.dirname(os.path.abspath(__file__))
+                src_dir = os.path.dirname(screens_dir)
+                root_dir = os.path.dirname(src_dir)
+                icon_path = os.path.join(root_dir, "assets", "icons", "stop.png")
+                self.voice_btn.setIcon(QIcon(icon_path))
+                
                 self.voice_btn.setStyleSheet(
                     self.voice_btn.styleSheet().replace(ACCENT_COLOR, "#ea0038")
                 )
@@ -398,7 +433,13 @@ class ChatScreen(QWidget):
                 ).start()
         else:
             self.is_recording = False
-            self.voice_btn.setText("🎤")
+            
+            screens_dir = os.path.dirname(os.path.abspath(__file__))
+            src_dir = os.path.dirname(screens_dir)
+            root_dir = os.path.dirname(src_dir)
+            icon_path = os.path.join(root_dir, "assets", "icons", "microphone.png")
+            self.voice_btn.setIcon(QIcon(icon_path))
+            
             self.voice_btn.setStyleSheet(
                 self.voice_btn.styleSheet().replace("#ea0038", ACCENT_COLOR)
             )

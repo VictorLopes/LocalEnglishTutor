@@ -7,7 +7,9 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QScrollArea,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QIcon
+import os
 from constants import BG_COLOR, HEADER_COLOR, TEXT_COLOR, ACCENT_COLOR, SECONDARY_TEXT
 
 class SelectionScreen(QWidget):
@@ -23,17 +25,23 @@ class SelectionScreen(QWidget):
         # Header with Back Button and Title
         header_layout = QHBoxLayout()
         if on_back:
-            back_btn = QPushButton("←")
+            back_btn = QPushButton()
+            
+            screens_dir = os.path.dirname(os.path.abspath(__file__))
+            src_dir = os.path.dirname(screens_dir)
+            root_dir = os.path.dirname(src_dir)
+            icon_path = os.path.join(root_dir, "assets", "icons", "back.png")
+            back_btn.setIcon(QIcon(icon_path))
+            back_btn.setIconSize(QSize(24, 24))
+            
             back_btn.setFixedSize(40, 40)
             back_btn.setCursor(Qt.PointingHandCursor)
             back_btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
-                    color: {TEXT_COLOR};
-                    font-size: 24px;
                     border: none;
                 }}
-                QPushButton:hover {{ color: {ACCENT_COLOR}; }}
+                QPushButton:hover {{ background-color: rgba(255, 255, 255, 0.1); border-radius: 20px; }}
             """)
             back_btn.clicked.connect(on_back)
             header_layout.addWidget(back_btn)
