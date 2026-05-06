@@ -12,7 +12,7 @@ from screens.selection_screen import SelectionScreen
 from screens.chat_screen import ChatScreen
 from screens.history_screen import HistoryScreen
 from database import Database
-from constants import BG_COLOR
+from constants import BG_COLOR, get_resource_path
 
 
 class MainWindow(QWidget):
@@ -21,8 +21,7 @@ class MainWindow(QWidget):
         self.setWindowTitle("AI English Tutor")
         self.setFixedSize(450, 700)
 
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        icon_path = os.path.join(root_dir, "profile.jpg")
+        icon_path = get_resource_path("profile.jpg")
         self.setWindowIcon(QIcon(icon_path))
 
         self.setStyleSheet(f"background-color: {BG_COLOR};")
@@ -63,8 +62,7 @@ class MainWindow(QWidget):
         self.stack.addWidget(self.subject_screen)
 
     def _load_config(self):
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_path = os.path.join(root_dir, "config.json")
+        config_path = get_resource_path("config.json")
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 return json.load(f)

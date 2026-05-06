@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 import os
-from constants import BG_COLOR, HEADER_COLOR, TEXT_COLOR, ACCENT_COLOR, SECONDARY_TEXT
+from constants import BG_COLOR, HEADER_COLOR, TEXT_COLOR, ACCENT_COLOR, SECONDARY_TEXT, get_resource_path
 
 class SelectionScreen(QWidget):
     def __init__(self, title, options, on_select, on_back=None, is_grid=True):
@@ -27,10 +27,7 @@ class SelectionScreen(QWidget):
         if on_back:
             back_btn = QPushButton()
             
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            src_dir = os.path.dirname(screens_dir)
-            root_dir = os.path.dirname(src_dir)
-            icon_path = os.path.join(root_dir, "assets", "icons", "back.png")
+            icon_path = get_resource_path(os.path.join("assets", "icons", "back.png"))
             back_btn.setIcon(QIcon(icon_path))
             back_btn.setIconSize(QSize(24, 24))
             

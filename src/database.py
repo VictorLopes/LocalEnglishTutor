@@ -1,12 +1,24 @@
 import sqlite3
 import os
 from datetime import datetime
+from constants import get_resource_path
 
 
 class Database:
     def __init__(self):
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        db_path = os.path.join(root_dir, "conversations.db")
+        # We want the database to be persistent, so we store it in the same directory as the executable/script
+        # get_resource_path("") returns the project root or _MEIPASS
+        # For the DB, we might want it in the same folder as the app
+        db_path = get_resource_path("conversations.db")
+        
+        # If we are in a bundle, get_resource_path returns a temp folder.
+        # We should probably use the directory where the binary IS, not where it's extracted.
+        import sys
+        if getattr(sys, 'frozen', False):
+            # If bundled, sys.executable is the path to the binary
+            app_dir = os.path.dirname(sys.executable)
+            db_path = os.path.join(app_dir, "conversations.db")
+
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.create_tables()
 

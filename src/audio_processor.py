@@ -3,7 +3,9 @@ import numpy as np
 import json
 import os
 import threading
+import sys
 from faster_whisper import WhisperModel
+from constants import get_resource_path
 
 
 class AudioProcessor:
@@ -16,6 +18,7 @@ class AudioProcessor:
         self.recording = False
         self.audio_data = []
         self._stream = None
+        self.root_dir = get_resource_path("")
         self.config = self._load_config()
 
     def load_model(self, download_root=None):
@@ -32,7 +35,7 @@ class AudioProcessor:
                 print("Model loaded.")
 
     def _load_config(self):
-        config_path = "config.json"
+        config_path = os.path.join(self.root_dir, "config.json")
         if os.path.exists(config_path):
             try:
                 with open(config_path, "r") as f:

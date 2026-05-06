@@ -3,6 +3,7 @@ import re
 import json
 import os
 from prompts import SUBJECT_SYSTEM_PROMPT
+from constants import get_resource_path
 
 class ChatClient:
     def __init__(self, model=None, system_prompt=None):
@@ -14,8 +15,7 @@ class ChatClient:
             self.messages.append({"role": "system", "content": self.system_prompt})
 
     def _load_config(self):
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_path = os.path.join(root_dir, "config.json")
+        config_path = get_resource_path("config.json")
         if os.path.exists(config_path):
             try:
                 with open(config_path, "r") as f:

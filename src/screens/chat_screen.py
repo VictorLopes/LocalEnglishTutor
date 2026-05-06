@@ -27,6 +27,7 @@ from constants import (
     TEXT_COLOR,
     SECONDARY_TEXT,
     ACCENT_COLOR,
+    get_resource_path,
 )
 
 
@@ -67,10 +68,7 @@ class MessageBubble(QFrame):
             self.play_btn = QPushButton()
 
             # Get icon path
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            src_dir = os.path.dirname(screens_dir)
-            root_dir = os.path.dirname(src_dir)
-            icon_path = os.path.join(root_dir, "assets", "icons", "start.png")
+            icon_path = get_resource_path(os.path.join("assets", "icons", "start.png"))
             self.play_btn.setIcon(QIcon(icon_path))
             self.play_btn.setIconSize(QSize(18, 18))
 
@@ -129,10 +127,7 @@ class MessageBubble(QFrame):
         if self.tts_processor:
             self.is_playing = True
 
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            src_dir = os.path.dirname(screens_dir)
-            root_dir = os.path.dirname(src_dir)
-            icon_path = os.path.join(root_dir, "assets", "icons", "pause.png")
+            icon_path = get_resource_path(os.path.join("assets", "icons", "pause.png"))
             self.play_btn.setIcon(QIcon(icon_path))
             if self.signals:
                 self.signals.audio_started.emit(self)
@@ -178,10 +173,7 @@ class MessageBubble(QFrame):
 
     def reset_ui(self):
         self.is_playing = False
-        screens_dir = os.path.dirname(os.path.abspath(__file__))
-        src_dir = os.path.dirname(screens_dir)
-        root_dir = os.path.dirname(src_dir)
-        icon_path = os.path.join(root_dir, "assets", "icons", "start.png")
+        icon_path = get_resource_path(os.path.join("assets", "icons", "start.png"))
         self.play_btn.setIcon(QIcon(icon_path))
 
 
@@ -197,9 +189,7 @@ class ChatScreen(QWidget):
         self.chat_client = ChatClient()
         self.chat_client.set_system_prompt(level, subject)
 
-        screens_dir = os.path.dirname(os.path.abspath(__file__))
-        src_dir = os.path.dirname(screens_dir)
-        self.project_root = os.path.dirname(src_dir)
+        self.project_root = get_resource_path("")
         self.models_dir = os.path.join(self.project_root, "models")
         os.makedirs(self.models_dir, exist_ok=True)
 
@@ -264,10 +254,7 @@ class ChatScreen(QWidget):
 
         back_btn = QPushButton()
 
-        screens_dir = os.path.dirname(os.path.abspath(__file__))
-        src_dir = os.path.dirname(screens_dir)
-        root_dir = os.path.dirname(src_dir)
-        icon_path = os.path.join(root_dir, "assets", "icons", "back.png")
+        icon_path = get_resource_path(os.path.join("assets", "icons", "back.png"))
         back_btn.setIcon(QIcon(icon_path))
         back_btn.setIconSize(QSize(24, 24))
 
@@ -285,9 +272,7 @@ class ChatScreen(QWidget):
 
         # Menu button (Ellipsis)
         self.menu_btn = QPushButton()
-        screens_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.dirname(os.path.dirname(screens_dir))
-        icon_path = os.path.join(root_dir, "assets", "icons", "ellipsis.png")
+        icon_path = get_resource_path(os.path.join("assets", "icons", "ellipsis.png"))
         self.menu_btn.setIcon(QIcon(icon_path))
         self.menu_btn.setIconSize(QSize(24, 24))
         self.menu_btn.setFixedSize(40, 40)
@@ -343,10 +328,7 @@ class ChatScreen(QWidget):
 
         self.voice_btn = QPushButton()
 
-        screens_dir = os.path.dirname(os.path.abspath(__file__))
-        src_dir = os.path.dirname(screens_dir)
-        root_dir = os.path.dirname(src_dir)
-        icon_path = os.path.join(root_dir, "assets", "icons", "microphone.png")
+        icon_path = get_resource_path(os.path.join("assets", "icons", "microphone.png"))
         self.voice_btn.setIcon(QIcon(icon_path))
         self.voice_btn.setIconSize(QSize(24, 24))
 
@@ -453,11 +435,7 @@ class ChatScreen(QWidget):
 
     def _set_profile_pic(self):
         try:
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            src_dir = os.path.dirname(screens_dir)
-            root_dir = os.path.dirname(src_dir)
-
-            pic_path = os.path.join(root_dir, "profile.jpg")
+            pic_path = get_resource_path("profile.jpg")
             pixmap = QPixmap(pic_path)
             pixmap = pixmap.scaled(
                 50, 50, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation
@@ -573,10 +551,7 @@ class ChatScreen(QWidget):
                 self.audio_processor.start_recording()
                 self.is_recording = True
 
-                screens_dir = os.path.dirname(os.path.abspath(__file__))
-                src_dir = os.path.dirname(screens_dir)
-                root_dir = os.path.dirname(src_dir)
-                icon_path = os.path.join(root_dir, "assets", "icons", "stop.png")
+                icon_path = get_resource_path(os.path.join("assets", "icons", "stop.png"))
                 self.voice_btn.setIcon(QIcon(icon_path))
 
                 self.voice_btn.setStyleSheet(
@@ -597,10 +572,7 @@ class ChatScreen(QWidget):
         else:
             self.is_recording = False
 
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            src_dir = os.path.dirname(screens_dir)
-            root_dir = os.path.dirname(src_dir)
-            icon_path = os.path.join(root_dir, "assets", "icons", "microphone.png")
+            icon_path = get_resource_path(os.path.join("assets", "icons", "microphone.png"))
             self.voice_btn.setIcon(QIcon(icon_path))
 
             self.voice_btn.setStyleSheet(

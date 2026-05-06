@@ -11,7 +11,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QBrush
 import os
 from datetime import datetime
-from constants import BG_COLOR, HEADER_COLOR, TEXT_COLOR, ACCENT_COLOR, SECONDARY_TEXT
+from constants import BG_COLOR, HEADER_COLOR, TEXT_COLOR, ACCENT_COLOR, SECONDARY_TEXT, get_resource_path
 
 
 class ConversationItem(QFrame):
@@ -100,9 +100,7 @@ class ConversationItem(QFrame):
             note_container.setContentsMargins(0, 5, 0, 0)
 
             note_icon = QLabel()
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            root_dir = os.path.dirname(os.path.dirname(screens_dir))
-            icon_path = os.path.join(root_dir, "assets", "icons", "note.png")
+            icon_path = get_resource_path(os.path.join("assets", "icons", "note.png"))
             pixmap = QPixmap(icon_path).scaled(
                 14, 14, Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
@@ -135,9 +133,7 @@ class ConversationItem(QFrame):
 
     def _set_placeholder_pic(self):
         try:
-            screens_dir = os.path.dirname(os.path.abspath(__file__))
-            root_dir = os.path.dirname(os.path.dirname(screens_dir))
-            pic_path = os.path.join(root_dir, "profile.jpg")
+            pic_path = get_resource_path("profile.jpg")
             if not os.path.exists(pic_path):
                 pixmap = QPixmap(50, 50)
                 pixmap.fill(Qt.transparent)
@@ -220,9 +216,7 @@ class HistoryScreen(QWidget):
 
         # New Conversation Button
         new_btn = QPushButton()
-        screens_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.dirname(os.path.dirname(screens_dir))
-        icon_path = os.path.join(root_dir, "assets", "icons", "add.png")
+        icon_path = get_resource_path(os.path.join("assets", "icons", "add.png"))
         new_btn.setIcon(QIcon(icon_path))
         new_btn.setIconSize(QSize(24, 24))
         new_btn.setFixedSize(40, 40)
