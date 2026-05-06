@@ -27,14 +27,18 @@ class AudioProcessor:
 
     def _get_input_device(self):
         devices = sd.query_devices()
-        return next((i for i, d in enumerate(devices) if d['max_input_channels'] > 0), None)
+        return next(
+            (i for i, d in enumerate(devices) if d["max_input_channels"] > 0), None
+        )
 
     def start_recording(self):
         self.audio_data = []
         input_device = self._get_input_device()
         if input_device is None:
-            raise RuntimeError("No microphone detected. Please connect a microphone or check your permissions.")
-            
+            raise RuntimeError(
+                "No microphone detected. Please connect a microphone or check your permissions."
+            )
+
         self.recording = True
         self._stream = sd.InputStream(
             device=input_device, samplerate=self.fs, channels=1, callback=self._callback

@@ -1,8 +1,7 @@
-import sys
 import time
 import threading
+import os
 from PySide6.QtWidgets import (
-    QApplication,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
@@ -17,6 +16,15 @@ from PySide6.QtGui import QPixmap, QPainter, QBrush
 from chat_client import ChatClient
 from audio_processor import AudioProcessor
 from tts_processor import TTSProcessor
+from constants import (
+    BG_COLOR,
+    HEADER_COLOR,
+    USER_BUBBLE,
+    AI_BUBBLE,
+    TEXT_COLOR,
+    SECONDARY_TEXT,
+    ACCENT_COLOR,
+)
 
 
 class WorkerSignals(QObject):
@@ -27,16 +35,6 @@ class WorkerSignals(QObject):
     audio_started = Signal(object)  # bubble object
     audio_reset = Signal(object)  # bubble object
     set_inputs = Signal(bool)
-
-
-# WhatsApp Colors
-BG_COLOR = "#0b141a"
-HEADER_COLOR = "#202c33"
-USER_BUBBLE = "#005c4b"
-AI_BUBBLE = "#202c33"
-TEXT_COLOR = "#e9edef"
-SECONDARY_TEXT = "#8696a0"
-ACCENT_COLOR = "#00a884"
 
 
 class MessageBubble(QFrame):
@@ -120,7 +118,6 @@ class MessageBubble(QFrame):
         if self.tts_processor:
             self.is_playing = True
             self.play_btn.setText("⏸")
-            # Signal the parent to stop any other playing audio
             if self.signals:
                 self.signals.audio_started.emit(self)
 
@@ -129,13 +126,11 @@ class MessageBubble(QFrame):
                     self.signals.audio_reset.emit(self)
 
             if self.audio_data:
-                # Use pre-generated audio
                 samples, sample_rate = self.audio_data
                 self.tts_processor.play_samples(
                     samples, sample_rate, on_finish=on_finish_callback
                 )
             else:
-                # Generate on the fly
                 threading.Thread(
                     target=self.tts_processor.speak,
                     args=(self.text,),
@@ -145,8 +140,6 @@ class MessageBubble(QFrame):
     def stop_audio(self):
         if self.tts_processor:
             self.tts_processor.stop()
-            # The on_finish_callback from the thread will eventually trigger audio_reset
-            # but we can also do it immediately for better responsiveness
             self.reset_ui()
 
     def reset_ui(self):
@@ -154,19 +147,20 @@ class MessageBubble(QFrame):
         self.play_btn.setText("▶")
 
 
-class WhatsAppClone(QWidget):
-    def __init__(self):
+class ChatScreen(QWidget):
+    def __init__(self, level, subject):
         super().__init__()
-        self.setWindowTitle("AI")
-        self.resize(420, 750)
+        self.level = level
+        self.subject = subject
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
         self.chat_client = ChatClient()
+        self.chat_client.set_system_prompt(level, subject)
+
         self.audio_processor = AudioProcessor()
         self.tts_processor = TTSProcessor()
         self.is_recording = False
 
-        # Signals
         self.signals = WorkerSignals()
         self.signals.add_message.connect(self.add_message_signal_handler)
         self.signals.update_indicator.connect(self.set_indicator)
@@ -175,19 +169,13 @@ class WhatsAppClone(QWidget):
         self.signals.set_inputs.connect(self.set_inputs_enabled)
 
         self.init_ui()
-
-        # Auto-scroll handling
         self.scroll.verticalScrollBar().rangeChanged.connect(self.scroll_to_bottom)
-
-        # Start initial greeting
         threading.Thread(target=self.initial_greeting).start()
 
     def add_message_signal_handler(self, text, sender="user", audio_data=None):
         bubble = self.add_message(text, sender, audio_data)
         if sender == "ai":
-            # Automatically play audio for AI messages
             bubble.play_audio()
-            # Re-enable inputs after AI is done
             self.set_inputs_enabled(True)
 
     def init_ui(self):
@@ -195,33 +183,45 @@ class WhatsAppClone(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Header
         header = QFrame()
         header.setFixedHeight(70)
         header.setStyleSheet(f"background-color: {HEADER_COLOR};")
         header_layout = QHBoxLayout(header)
 
-        # Profile Pic Placeholder
         self.pic_label = QLabel()
         self.pic_label.setFixedSize(50, 50)
         self._set_profile_pic()
         header_layout.addWidget(self.pic_label)
 
         info_layout = QVBoxLayout()
-        name_label = QLabel("AI")
+        name_label = QLabel(f"AI - {self.level}")
         name_label.setStyleSheet(
             f"color: {TEXT_COLOR}; font-size: 16px; font-weight: bold;"
         )
-        status_label = QLabel("online")
+        status_label = QLabel(self.subject)
         status_label.setStyleSheet(f"color: {ACCENT_COLOR}; font-size: 12px;")
         info_layout.addWidget(name_label)
         info_layout.addWidget(status_label)
         header_layout.addLayout(info_layout)
         header_layout.addStretch()
 
+        back_btn = QPushButton("←")
+        back_btn.setFixedSize(40, 40)
+        back_btn.setCursor(Qt.PointingHandCursor)
+        back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {TEXT_COLOR};
+                font-size: 24px;
+                border: none;
+            }}
+            QPushButton:hover {{ color: {ACCENT_COLOR}; }}
+        """)
+        back_btn.clicked.connect(self.go_back)
+        header_layout.addWidget(back_btn)
+
         main_layout.addWidget(header)
 
-        # Chat Area
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("border: none;")
@@ -231,7 +231,6 @@ class WhatsAppClone(QWidget):
         self.scroll.setWidget(self.chat_widget)
         main_layout.addWidget(self.scroll)
 
-        # Indicators
         self.indicator_label = QLabel("")
         self.indicator_label.setAlignment(Qt.AlignCenter)
         self.indicator_label.setStyleSheet(
@@ -240,7 +239,6 @@ class WhatsAppClone(QWidget):
         self.indicator_label.hide()
         main_layout.addWidget(self.indicator_label)
 
-        # Input Bar
         input_bar = QFrame()
         input_bar.setFixedHeight(70)
         input_bar.setStyleSheet(f"background-color: {HEADER_COLOR};")
@@ -277,10 +275,14 @@ class WhatsAppClone(QWidget):
 
         main_layout.addWidget(input_bar)
 
+    def go_back(self):
+        main_window = self.window()
+        if hasattr(main_window, "stack"):
+            main_window.stack.setCurrentIndex(1)
+
     def set_inputs_enabled(self, enabled):
         self.voice_btn.setEnabled(enabled)
         self.entry.setEnabled(enabled)
-        # Visual feedback via stylesheet
         if not enabled:
             self.voice_btn.setStyleSheet(
                 self.voice_btn.styleSheet() + "background-color: #555;"
@@ -292,12 +294,15 @@ class WhatsAppClone(QWidget):
 
     def _set_profile_pic(self):
         try:
-            pixmap = QPixmap("profile.png")
+            screens_dir = os.path.dirname(os.path.abspath(__file__))
+            src_dir = os.path.dirname(screens_dir)
+            root_dir = os.path.dirname(src_dir)
+
+            pic_path = os.path.join(root_dir, "profile.png")
+            pixmap = QPixmap(pic_path)
             pixmap = pixmap.scaled(
                 50, 50, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation
             )
-
-            # Mask to circle
             out_img = QPixmap(pixmap.size())
             out_img.fill(Qt.transparent)
             painter = QPainter(out_img)
@@ -324,7 +329,6 @@ class WhatsAppClone(QWidget):
         )
 
     def handle_audio_start(self, active_bubble):
-        # Stop all other bubbles that might be playing
         for i in range(self.chat_layout.count()):
             item = self.chat_layout.itemAt(i)
             if item and item.widget():
@@ -383,8 +387,9 @@ class WhatsAppClone(QWidget):
             except Exception as e:
                 print(f"Recording error: {e}")
                 self.signals.update_indicator.emit(f"⚠️ {str(e)}", True)
-                # Hide error after 3 seconds
-                threading.Timer(3.0, lambda: self.signals.update_indicator.emit("", False)).start()
+                threading.Timer(
+                    3.0, lambda: self.signals.update_indicator.emit("", False)
+                ).start()
         else:
             self.is_recording = False
             self.voice_btn.setText("🎤")
@@ -396,20 +401,10 @@ class WhatsAppClone(QWidget):
             threading.Thread(target=self.process_voice_input, args=(audio_np,)).start()
 
     def process_voice_input(self, audio_np):
-        print("Transcription starting...")
         text = self.audio_processor.transcribe(audio_np)
-        print(f"Transcribed text: {text}")
         self.signals.update_indicator.emit("", False)
         if text:
             self.signals.add_message.emit(text, "user", None)
             self.process_ai_response(text)
         else:
             self.signals.set_inputs.emit(True)
-            print("No text transcribed.")
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = WhatsAppClone()
-    window.show()
-    sys.exit(app.exec())

@@ -2,16 +2,20 @@ import ollama
 import re
 import json
 import os
-from prompts import SYSTEM_PROMPT
+from prompts import SUBJECT_SYSTEM_PROMPT
 
 class ChatClient:
-    def __init__(self, model=None):
+    def __init__(self, model=None, system_prompt=None):
         self.config = self._load_config()
         self.model = model or self.config.get("model", "sam860/lfm2.5:1.2b")
-        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.system_prompt = system_prompt
+        self.messages = []
+        if self.system_prompt:
+            self.messages.append({"role": "system", "content": self.system_prompt})
 
     def _load_config(self):
-        config_path = "config.json"
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_path = os.path.join(root_dir, "config.json")
         if os.path.exists(config_path):
             try:
                 with open(config_path, "r") as f:
@@ -26,6 +30,10 @@ class ChatClient:
         # Remove emojis using regex
         text = re.sub(r'[^\x00-\x7F]+', '', text)
         return text.strip()
+
+    def set_system_prompt(self, level, subject):
+        self.system_prompt = SUBJECT_SYSTEM_PROMPT.format(level=level, subject=subject)
+        self.clear_history()
 
     def get_initial_greeting(self):
         try:
@@ -48,4 +56,6 @@ class ChatClient:
             return f"Error connecting to Ollama: {str(e)}"
 
     def clear_history(self):
-        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.messages = []
+        if self.system_prompt:
+            self.messages.append({"role": "system", "content": self.system_prompt})
