@@ -59,3 +59,9 @@ class ChatClient:
         self.messages = []
         if self.system_prompt:
             self.messages.append({"role": "system", "content": self.system_prompt})
+
+    def load_history(self, db_messages):
+        self.clear_history()
+        for text, sender in db_messages:
+            role = "assistant" if sender == "ai" else "user"
+            self.messages.append({"role": role, "content": text})

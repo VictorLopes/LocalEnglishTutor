@@ -165,10 +165,12 @@ class MessageBubble(QFrame):
 
 
 class ChatScreen(QWidget):
-    def __init__(self, level, subject):
+    def __init__(self, db, level, subject, conversation_id=None):
         super().__init__()
+        self.db = db
         self.level = level
         self.subject = subject
+        self.conversation_id = conversation_id
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
         self.chat_client = ChatClient()
@@ -187,13 +189,24 @@ class ChatScreen(QWidget):
 
         self.init_ui()
         self.scroll.verticalScrollBar().rangeChanged.connect(self.scroll_to_bottom)
-        threading.Thread(target=self.initial_greeting).start()
+        
+        if self.conversation_id:
+            self.load_existing_conversation()
+        else:
+            threading.Thread(target=self.initial_greeting).start()
 
     def add_message_signal_handler(self, text, sender="user", audio_data=None):
         bubble = self.add_message(text, sender, audio_data)
         if sender == "ai":
-            bubble.play_audio()
+            if audio_data:
+                bubble.play_audio()
             self.set_inputs_enabled(True)
+
+    def load_existing_conversation(self):
+        messages = self.db.get_messages(self.conversation_id)
+        self.chat_client.load_history(messages)
+        for text, sender in messages:
+            self.add_message(text, sender, save_to_db=False)
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -312,8 +325,8 @@ class ChatScreen(QWidget):
             self.is_recording = False
 
         main_window = self.window()
-        if hasattr(main_window, "stack"):
-            main_window.stack.setCurrentIndex(1)
+        if hasattr(main_window, "go_back_to_history"):
+            main_window.go_back_to_history()
 
     def set_inputs_enabled(self, enabled):
         self.voice_btn.setEnabled(enabled)
@@ -351,7 +364,10 @@ class ChatScreen(QWidget):
         except:
             pass
 
-    def add_message(self, text, sender="user", audio_data=None):
+    def add_message(self, text, sender="user", audio_data=None, save_to_db=True):
+        if save_to_db and self.conversation_id:
+            self.db.add_message(self.conversation_id, text, sender)
+            
         bubble = MessageBubble(
             text, sender, self.tts_processor, self.signals, audio_data
         )
@@ -386,6 +402,11 @@ class ChatScreen(QWidget):
     def initial_greeting(self):
         self.signals.set_inputs.emit(False)
         self.signals.update_indicator.emit("Connecting to AI Tutor...", True)
+        
+        # Create conversation in DB if not exists
+        if not self.conversation_id:
+            self.conversation_id = self.db.create_conversation(self.level, self.subject)
+            
         greeting = self.chat_client.get_initial_greeting()
         self.signals.update_indicator.emit("AI is recording...", True)
         samples, rate = self.tts_processor.generate(greeting)
