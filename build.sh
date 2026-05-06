@@ -34,7 +34,7 @@ pip install pyinstaller
 
 # 4. Clean previous builds
 echo "Cleaning old build files..."
-rm -rf build dist *.spec
+rm -rf build dist
 
 # 5. Build arguments
 # --noconsole: Hide terminal on launch
@@ -60,22 +60,8 @@ if [ "$PLATFORM" == "Mac" ]; then
 fi
 
 # Build command
-pyinstaller --noconsole --name "${APP_NAME}" \
-    --add-data "config.json${SEP}." \
-    --add-data "profile.jpg${SEP}." \
-    --add-data "images${SEP}images" \
-    --add-data "assets${SEP}assets" \
-    --collect-all onnxruntime \
-    --collect-all faster_whisper \
-    --collect-all kokoro_onnx \
-    --collect-all espeakng_loader \
-    --collect-all phonemizer \
-    --collect-all language_tags \
-    --collect-all segments \
-    --collect-all csvw \
-    --hidden-import PySide6.QtSvg \
-    --icon "${ICON_FILE}" \
-    "${MAIN_SCRIPT}"
+pyinstaller LocalEnglishTutor.spec --noconfirm
+
 
 echo "--- Build Complete! ---"
 if [ "$PLATFORM" == "Mac" ]; then

@@ -69,11 +69,18 @@ class AudioProcessor:
                 "No microphone detected. Please connect a microphone or check your permissions."
             )
 
+        try:
+            device_info = sd.query_devices(input_device)
+            print(f"Recording: Starting on device '{device_info['name']}' at {self.fs}Hz")
+        except Exception as e:
+            print(f"Recording: Could not query device info: {e}")
+
         self.recording = True
         self._stream = sd.InputStream(
             device=input_device, samplerate=self.fs, channels=1, callback=self._callback
         )
         self._stream.start()
+
 
     def _callback(self, indata, frames, time, status):
         if self.recording:

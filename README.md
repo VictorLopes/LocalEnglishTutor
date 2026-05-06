@@ -78,6 +78,10 @@ Before you begin, ensure you have the following installed:
     -   **Voice Chat**: Click the 🎤 icon to start recording, speak, and click the ⏹ icon to stop. The AI will automatically transcribe and respond with audio.
     -   **Audio Playback**: Click the play button on AI messages to replay the tutor's voice.
 
+
+>[!WARNING]
+> On MacOS, the app needs permission to access the microphone. You can grant this permission in the System Settings > Privacy & Security > Microphone. If you are facing issues with the microphone, try granting the permission in the terminal using `tccutil reset Microphone com.localenglishtutor.app`.
+
 ## License 📄
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

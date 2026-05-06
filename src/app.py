@@ -112,7 +112,11 @@ class MainWindow(QWidget):
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+    from logger_util import logger
+    logger.start_capturing()
+    
     app = QApplication(sys.argv)
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

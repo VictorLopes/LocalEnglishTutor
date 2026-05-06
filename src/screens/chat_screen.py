@@ -212,6 +212,9 @@ class ChatScreen(QWidget):
             self.load_existing_conversation()
         else:
             threading.Thread(target=self.initial_greeting).start()
+            
+        self.setup_shortcuts()
+
 
     def add_message_signal_handler(self, text, sender="user", audio_data=None):
         bubble = self.add_message(text, sender, audio_data)
@@ -622,5 +625,29 @@ class ChatScreen(QWidget):
             self.signals.update_indicator.emit(f"⚠️ Error: {str(e)}", True)
             self.signals.set_inputs.emit(True)
             threading.Timer(5.0, lambda: self.signals.update_indicator.emit("", False)).start()
+    def setup_shortcuts(self):
+        from PySide6.QtGui import QShortcut, QKeySequence
+        self.log_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
+        self.log_shortcut.activated.connect(self.show_logs)
 
+    def show_logs(self):
+        from PySide6.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QPushButton
+        from logger_util import logger
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Debug Logs")
+        dialog.resize(600, 400)
+        layout = QVBoxLayout(dialog)
+        
+        text_edit = QTextEdit()
+        text_edit.setReadOnly(True)
+        text_edit.setPlainText(logger.get_logs())
+        text_edit.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4; font-family: monospace;")
+        layout.addWidget(text_edit)
+        
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(lambda: text_edit.setPlainText(logger.get_logs()))
+        layout.addWidget(refresh_btn)
+        
+        dialog.exec()
 

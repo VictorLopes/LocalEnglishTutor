@@ -66,4 +66,22 @@ try:
 except Exception as e:
     print(f"Write Access: FAILED - {e}")
 
+# Verify Info.plist for Microphone (macOS only)
+if sys.platform == "darwin" and getattr(sys, 'frozen', False):
+    try:
+        import plistlib
+        # In a bundle, Info.plist is in Contents/Info.plist
+        plist_path = os.path.join(os.path.dirname(sys.executable), "..", "Info.plist")
+        if os.path.exists(plist_path):
+            with open(plist_path, 'rb') as fp:
+                pl = plistlib.load(fp)
+                if 'NSMicrophoneUsageDescription' in pl:
+                    print("Info.plist Microphone Permission: FOUND")
+                else:
+                    print("Info.plist Microphone Permission: MISSING! Rebuild with correct spec file.")
+        else:
+            print(f"Info.plist not found at {plist_path}")
+    except Exception as e:
+        print(f"Info.plist check failed: {e}")
+
 print(f"---------------------------------------")
