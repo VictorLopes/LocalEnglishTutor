@@ -2,7 +2,7 @@
 
 A privacy-focused, local AI-powered English tutor with a WhatsApp-inspired interface. Speak or type to interact with your AI tutor, featuring high-quality voice transcription and synthesis—all running locally on your machine.
 
-![App Screenshot](images/screenshot.jpeg)
+![App Demo](images/app.gif)
 
 ## Features 🚀
 
@@ -14,22 +14,22 @@ A privacy-focused, local AI-powered English tutor with a WhatsApp-inspired inter
 -   **Real-time Indicators**: Visual feedback for "thinking", "recording", and "transcribing" states.
 -   **Cross-Platform**: Built with Python and Qt, compatible with macOS, Linux, and Windows (WSL2).
 
+## Personalized Learning 🎯
+
+The Local English Tutor adapts to your specific needs through a two-step selection process:
+
+1.  **Level Selection**: Choose from standard CEFR levels (**A1 to C2**) or specialized tracks like **Business English** and **Job Interview** preparation.
+2.  **Subject Selection**: Pick from dozens of curated topics—ranging from "Daily Routine" for beginners to "Quantum Field Theory" or "Business Negotiation" for advanced learners.
+3.  **Customizable Subjects**: You can easily add new subjects or levels by editing the `config.json` file.
+
+This ensures the AI Tutor uses the appropriate vocabulary, grammar complexity, and context for your session.
+
 ## Tech Stack 🛠️
 
 -   **UI Framework**: PySide6 (Qt for Python)
 -   **LLM Engine**: [Ollama](https://ollama.com/)
--   **Speech-to-Text**: [faster-whisper](https://github.com/SYSTRONICS/faster-whisper) (Whisper Tiny model)
+-   **Speech-to-Text**: [faster-whisper](https://github.com/SYSTRONICS/faster-whisper) (Whisper Base model)
 -   **Text-to-Speech**: [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx)
--   **Models**: 
-    -   LLM: `gemma4:e4b` (Default) or `sam860/lfm2.5:1.2b`
-    -   TTS: `kokoro-v1.0.onnx`
-
-## Model Recommendations 🧠
-
-Choosing the right model depends on your hardware performance:
-
--   **High-End (More RAM)**: If your machine has a bit more memory, go for **`gemma4:e4b`** or **`gemma4:e2b`**. They provide a beautiful learning experience with higher accuracy.
--   **Lower-End**: If you have a more limited machine, **`sam860/lfm2.5:1.2b`** is a great choice that still performs very well for tutoring.
 
 > [!TIP]
 > You can easily switch between these models by updating the `"model"` field in your `config.json` file.
@@ -38,7 +38,7 @@ Choosing the right model depends on your hardware performance:
 
 Before you begin, ensure you have the following installed:
 
-1.  **Python 3.10+**
+1.  **Python 3.12+**
 2.  **Ollama**: [Download and install Ollama](https://ollama.com/download)
 
 ## Installation ⚙️
@@ -58,15 +58,19 @@ Before you begin, ensure you have the following installed:
 
 ## Usage 🎯
 
-To start the application, simply run:
-```bash
-./start.sh
-```
+1.  **Start the application**:
+    ```bash
+    ./start.sh
+    ```
 
-### How to use:
--   **Text Chat**: Type your message in the input field and press Enter.
--   **Voice Chat**: Click the 🎤 icon to start recording, speak your sentence, and click the ⏹ icon to stop. The AI will automatically transcribe and respond with audio.
--   **Audio Playback**: Click the play button on AI messages to replay the tutor's voice.
+2.  **Configure your session**:
+    -   Select your English **Level** on the first screen.
+    -   Choose a **Subject** you'd like to practice.
+
+3.  **Start Chatting**:
+    -   **Text Chat**: Type your message in the input field and press Enter.
+    -   **Voice Chat**: Click the 🎤 icon to start recording, speak, and click the ⏹ icon to stop. The AI will automatically transcribe and respond with audio.
+    -   **Audio Playback**: Click the play button on AI messages to replay the tutor's voice.
 
 ## License 📄
 
