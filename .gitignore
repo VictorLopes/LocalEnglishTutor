@@ -3,3 +3,4 @@ __pycache__/
 kokoro-v1.0.onnx
 voices-v1.0.bin
 conversations.db
+models/

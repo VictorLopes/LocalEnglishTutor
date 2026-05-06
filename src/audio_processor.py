@@ -2,18 +2,34 @@ import sounddevice as sd
 import numpy as np
 import json
 import os
+import threading
 from faster_whisper import WhisperModel
 
 
 class AudioProcessor:
-    def __init__(self, model_size="base"):
-        # Run on CPU. 'base' is more accurate than 'tiny' with low overhead.
-        self.model = WhisperModel(model_size, device="cpu", compute_type="int8")
+    def __init__(self, model_size="medium", download_root=None):
+        self.model_size = model_size
+        self.download_root = download_root
+        self.model = None
+        self._load_lock = threading.Lock()
         self.fs = 16000  # Whisper expects 16kHz
         self.recording = False
         self.audio_data = []
         self._stream = None
         self.config = self._load_config()
+
+    def load_model(self, download_root=None):
+        with self._load_lock:
+            if self.model is None:
+                path = download_root or self.download_root
+                print(f"Loading Whisper model ({self.model_size})...")
+                self.model = WhisperModel(
+                    self.model_size,
+                    device="cpu",
+                    compute_type="int8",
+                    download_root=path,
+                )
+                print("Model loaded.")
 
     def _load_config(self):
         config_path = "config.json"
@@ -65,6 +81,9 @@ class AudioProcessor:
     def transcribe(self, audio_np):
         if audio_np is None:
             return ""
+
+        if self.model is None:
+            self.load_model()
 
         # Using initial_prompt to help with context and punctuation
         # vad_filter removes silence and noise

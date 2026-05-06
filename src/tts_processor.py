@@ -8,19 +8,30 @@ import json
 
 
 class TTSProcessor:
-    def __init__(self, model_path=None, voices_path=None):
+    def __init__(self, models_dir=None):
         self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.model_path = model_path or os.path.join(self.root_dir, "kokoro-v1.0.onnx")
-        self.voices_path = voices_path or os.path.join(self.root_dir, "voices-v1.0.bin")
+        self.models_dir = models_dir or os.path.join(self.root_dir, "models")
+        os.makedirs(self.models_dir, exist_ok=True)
+
+        self.model_path = os.path.join(self.models_dir, "kokoro-v1.0.onnx")
+        self.voices_path = os.path.join(self.models_dir, "voices-v1.0.bin")
+
         self.kokoro = None
+        self._load_lock = threading.Lock()
         self.config = self._load_config()
 
-        self._ensure_models_exist()
-
-        try:
-            self.kokoro = Kokoro(self.model_path, self.voices_path)
-        except Exception as e:
-            print(f"Error initializing Kokoro: {e}")
+    def load_model(self, progress_callback=None):
+        with self._load_lock:
+            if self.kokoro is None:
+                self._ensure_models_exist(progress_callback)
+                try:
+                    if progress_callback:
+                        progress_callback("Initializing speech engine...")
+                    print(f"Initializing Kokoro with {self.model_path}...")
+                    self.kokoro = Kokoro(self.model_path, self.voices_path)
+                    print("Kokoro initialized.")
+                except Exception as e:
+                    print(f"Error initializing Kokoro: {e}")
 
     def _load_config(self):
         config_path = os.path.join(self.root_dir, "config.json")
@@ -32,7 +43,7 @@ class TTSProcessor:
                 print(f"Error loading config.json: {e}")
         return {}
 
-    def _ensure_models_exist(self):
+    def _ensure_models_exist(self, progress_callback=None):
         urls = {
             self.model_path: "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx",
             self.voices_path: "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
@@ -40,11 +51,22 @@ class TTSProcessor:
 
         for path, url in urls.items():
             if not os.path.exists(path):
-                print(f"Downloading {path}...")
+                filename = os.path.basename(path)
+                print(f"Downloading {filename}...")
                 response = requests.get(url, stream=True)
+                total_size = int(response.headers.get("content-length", 0))
+                downloaded = 0
+
                 with open(path, "wb") as f:
                     for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if progress_callback and total_size > 0:
+                                percent = int(downloaded / total_size * 100)
+                                progress_callback(
+                                    f"Downloading {filename}: {percent}%"
+                                )
                 print(f"Downloaded {path}")
 
     def is_playing(self):
@@ -53,7 +75,10 @@ class TTSProcessor:
     def stop(self):
         sd.stop()
 
-    def generate(self, text, voice=None):
+    def generate(self, text, voice=None, progress_callback=None):
+        if self.kokoro is None:
+            self.load_model(progress_callback)
+
         if not self.kokoro:
             print("TTS not initialized.")
             return None, None
@@ -104,6 +129,6 @@ class TTSProcessor:
             if on_finish:
                 on_finish()
 
-    def speak(self, text, voice="af_sarah", on_finish=None):
-        samples, sample_rate = self.generate(text, voice)
+    def speak(self, text, voice="af_sarah", on_finish=None, progress_callback=None):
+        samples, sample_rate = self.generate(text, voice, progress_callback)
         self.play_samples(samples, sample_rate, on_finish)

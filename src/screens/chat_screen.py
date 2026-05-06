@@ -139,7 +139,14 @@ class MessageBubble(QFrame):
 
             def on_finish_callback():
                 if self.signals:
+                    self.signals.update_indicator.emit("", False)
                     self.signals.audio_reset.emit(self)
+
+            if not self.audio_data and self.tts_processor.kokoro is None:
+                if self.signals:
+                    self.signals.update_indicator.emit(
+                        "Downloading speech model...", True
+                    )
 
             if self.audio_data:
                 samples, sample_rate = self.audio_data
@@ -147,11 +154,22 @@ class MessageBubble(QFrame):
                     samples, sample_rate, on_finish=on_finish_callback
                 )
             else:
-                threading.Thread(
-                    target=self.tts_processor.speak,
-                    args=(self.text,),
-                    kwargs={"on_finish": on_finish_callback},
-                ).start()
+
+                def speak_thread():
+                    def progress_cb(msg):
+                        if self.signals:
+                            self.signals.update_indicator.emit(msg, True)
+
+                    self.tts_processor.speak(
+                        self.text,
+                        on_finish=on_finish_callback,
+                        progress_callback=progress_cb,
+                    )
+                    # Clear indicator once generation is done and playback starts
+                    if self.signals:
+                        self.signals.update_indicator.emit("", False)
+
+                threading.Thread(target=speak_thread).start()
 
     def stop_audio(self):
         if self.tts_processor:
@@ -179,8 +197,14 @@ class ChatScreen(QWidget):
         self.chat_client = ChatClient()
         self.chat_client.set_system_prompt(level, subject)
 
-        self.audio_processor = AudioProcessor()
-        self.tts_processor = TTSProcessor()
+        screens_dir = os.path.dirname(os.path.abspath(__file__))
+        src_dir = os.path.dirname(screens_dir)
+        self.project_root = os.path.dirname(src_dir)
+        self.models_dir = os.path.join(self.project_root, "models")
+        os.makedirs(self.models_dir, exist_ok=True)
+
+        self.audio_processor = AudioProcessor(download_root=self.models_dir)
+        self.tts_processor = TTSProcessor(models_dir=self.models_dir)
         self.is_recording = False
 
         self.signals = WorkerSignals()
@@ -490,12 +514,31 @@ class ChatScreen(QWidget):
         self.signals.set_inputs.emit(False)
         self.signals.update_indicator.emit("Connecting to AI Tutor...", True)
 
+        # Pre-load Whisper model in the background
+        self.signals.update_indicator.emit(
+            "Checking transcription model (this may take a while if downloading)...",
+            True,
+        )
+        self.audio_processor.load_model(download_root=self.models_dir)
+        # Pre-load TTS model in the background
+        def update_tts_progress(msg):
+            self.signals.update_indicator.emit(msg, True)
+
+        self.tts_processor.load_model(progress_callback=update_tts_progress)
+        self.signals.update_indicator.emit("Connecting to AI Tutor...", True)
+
         # Create conversation in DB if not exists
         if not self.conversation_id:
             self.conversation_id = self.db.create_conversation(self.level, self.subject)
 
         greeting = self.chat_client.get_initial_greeting()
-        self.signals.update_indicator.emit("AI is recording...", True)
+        if self.tts_processor.kokoro is None:
+            def update_tts_progress(msg):
+                self.signals.update_indicator.emit(msg, True)
+            self.tts_processor.load_model(progress_callback=update_tts_progress)
+        else:
+            self.signals.update_indicator.emit("AI is recording...", True)
+            
         samples, rate = self.tts_processor.generate(greeting)
         self.signals.update_indicator.emit("", False)
         self.signals.add_message.emit(greeting, "ai", (samples, rate))
@@ -512,7 +555,14 @@ class ChatScreen(QWidget):
         self.signals.set_inputs.emit(False)
         self.signals.update_indicator.emit("AI is thinking...", True)
         response = self.chat_client.get_response(text)
-        self.signals.update_indicator.emit("AI is recording...", True)
+        
+        if self.tts_processor.kokoro is None:
+            def update_tts_progress(msg):
+                self.signals.update_indicator.emit(msg, True)
+            self.tts_processor.load_model(progress_callback=update_tts_progress)
+        else:
+            self.signals.update_indicator.emit("AI is recording...", True)
+            
         samples, rate = self.tts_processor.generate(response)
         self.signals.update_indicator.emit("", False)
         self.signals.add_message.emit(response, "ai", (samples, rate))
@@ -532,7 +582,12 @@ class ChatScreen(QWidget):
                 self.voice_btn.setStyleSheet(
                     self.voice_btn.styleSheet().replace(ACCENT_COLOR, "#ea0038")
                 )
-                self.signals.update_indicator.emit("Recording...", True)
+                if self.audio_processor.model is None:
+                    self.signals.update_indicator.emit(
+                        "Downloading transcription model...", True
+                    )
+                else:
+                    self.signals.update_indicator.emit("Recording...", True)
             except Exception as e:
                 print(f"Recording error: {e}")
                 self.signals.update_indicator.emit(f"⚠️ {str(e)}", True)
@@ -551,11 +606,21 @@ class ChatScreen(QWidget):
             self.voice_btn.setStyleSheet(
                 self.voice_btn.styleSheet().replace("#ea0038", ACCENT_COLOR)
             )
-            self.signals.update_indicator.emit("Transcribing...", True)
+            if self.audio_processor.model is None:
+                self.signals.update_indicator.emit(
+                    "Downloading transcription model...", True
+                )
+            else:
+                self.signals.update_indicator.emit("Transcribing...", True)
             audio_np = self.audio_processor.stop_recording()
             threading.Thread(target=self.process_voice_input, args=(audio_np,)).start()
 
     def process_voice_input(self, audio_np):
+        if self.audio_processor.model is None:
+            self.signals.update_indicator.emit(
+                "Downloading transcription model...", True
+            )
+
         text = self.audio_processor.transcribe(audio_np)
         self.signals.update_indicator.emit("", False)
         if text:
