@@ -25,14 +25,25 @@ class AudioProcessor:
         with self._load_lock:
             if self.model is None:
                 path = download_root or self.download_root
-                print(f"Loading Whisper model ({self.model_size})...")
-                self.model = WhisperModel(
-                    self.model_size,
-                    device="cpu",
-                    compute_type="int8",
-                    download_root=path,
-                )
-                print("Model loaded.")
+                # Ensure path is absolute and exists
+                path = os.path.abspath(path)
+                os.makedirs(path, exist_ok=True)
+                
+                print(f"Loading Whisper model ({self.model_size}) from: {path}")
+                try:
+                    self.model = WhisperModel(
+                        self.model_size,
+                        device="cpu",
+                        compute_type="int8",
+                        download_root=path,
+                        num_workers=1,
+                    )
+                    print("Whisper model loaded successfully.")
+                except Exception as e:
+                    print(f"Error loading Whisper model from {path}: {e}")
+                    raise e
+
+
 
     def _load_config(self):
         config_path = os.path.join(self.root_dir, "config.json")
@@ -83,6 +94,14 @@ class AudioProcessor:
 
     def transcribe(self, audio_np):
         if audio_np is None:
+            print("Transcription: Received None audio data.")
+            return ""
+
+        max_val = np.max(np.abs(audio_np)) if len(audio_np) > 0 else 0
+        print(f"Transcription: Audio length={len(audio_np)}, Max amplitude={max_val:.5f}")
+
+        if max_val < 0.001:
+            print("Transcription: Audio level too low. This might be a microphone permission issue.")
             return ""
 
         if self.model is None:
@@ -97,5 +116,9 @@ class AudioProcessor:
             vad_filter=True,
             initial_prompt="This is a conversation with an AI English tutor. The speaker is practicing their English.",
         )
-        text = " ".join([segment.text for segment in segments])
+        
+        results = list(segments)
+        print(f"Transcription: Found {len(results)} segments.")
+        text = " ".join([segment.text for segment in results])
         return text.strip()
+

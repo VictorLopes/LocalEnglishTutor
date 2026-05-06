@@ -1,5 +1,6 @@
 from PySide6.QtGui import QIcon
 import sys
+import multiprocessing
 import json
 import os
 from PySide6.QtWidgets import (
@@ -110,6 +111,7 @@ class MainWindow(QWidget):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

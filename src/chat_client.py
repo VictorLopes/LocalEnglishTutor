@@ -42,6 +42,22 @@ class ChatClient:
             self.messages.append({"role": "assistant", "content": bot_message})
             return bot_message
         except Exception as e:
+            error_str = str(e).lower()
+            if "not found" in error_str or "404" in error_str:
+                try:
+                    print(f"Model {self.model} not found. Attempting to pull...")
+                    ollama.pull(self.model)
+                    # Retry once after pulling
+                    response = ollama.chat(model=self.model, messages=self.messages)
+                    bot_message = self.clean_text(response["message"]["content"])
+                    self.messages.append({"role": "assistant", "content": bot_message})
+                    return bot_message
+                except Exception as pull_e:
+                    return f"Error pulling model '{self.model}': {str(pull_e)}. Please ensure Ollama is running and you have an internet connection."
+            
+            if "connection" in error_str or "refused" in error_str:
+                return "Error: Could not connect to Ollama. Please make sure Ollama is running on your machine."
+                
             return f"Error connecting to Ollama: {str(e)}"
 
     def get_response(self, user_input):
@@ -53,7 +69,21 @@ class ChatClient:
             self.messages.append({"role": "assistant", "content": bot_message})
             return bot_message
         except Exception as e:
+            error_str = str(e).lower()
+            if "not found" in error_str or "404" in error_str:
+                try:
+                    print(f"Model {self.model} not found. Attempting to pull...")
+                    ollama.pull(self.model)
+                    # Retry
+                    response = ollama.chat(model=self.model, messages=self.messages)
+                    bot_message = self.clean_text(response["message"]["content"])
+                    self.messages.append({"role": "assistant", "content": bot_message})
+                    return bot_message
+                except Exception as pull_e:
+                    return f"Error pulling model '{self.model}': {str(pull_e)}"
+            
             return f"Error connecting to Ollama: {str(e)}"
+
 
     def clear_history(self):
         self.messages = []

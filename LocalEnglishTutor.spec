@@ -53,7 +53,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icon.png'],
+    icon=['icon.icns'],
 )
 coll = COLLECT(
     exe,
@@ -64,3 +64,14 @@ coll = COLLECT(
     upx_exclude=[],
     name='LocalEnglishTutor',
 )
+app = BUNDLE(
+    coll,
+    name='LocalEnglishTutor.app',
+    icon='icon.icns',
+    bundle_identifier=None,
+    info_plist={
+        'NSMicrophoneUsageDescription': 'This app needs access to your microphone to transcribe your speech for the AI English Tutor.',
+        'LSMinimumSystemVersion': '10.13',
+    },
+)
+

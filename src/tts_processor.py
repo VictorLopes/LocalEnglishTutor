@@ -1,6 +1,6 @@
 import sounddevice as sd
 from kokoro_onnx import Kokoro
-from constants import get_resource_path
+from constants import get_resource_path, get_data_path
 import os
 import requests
 import numpy as np
@@ -12,7 +12,7 @@ import sys
 class TTSProcessor:
     def __init__(self, models_dir=None):
         self.root_dir = get_resource_path("")
-        self.models_dir = models_dir or os.path.join(self.root_dir, "models")
+        self.models_dir = models_dir or get_data_path("models")
         os.makedirs(self.models_dir, exist_ok=True)
 
         self.model_path = os.path.join(self.models_dir, "kokoro-v1.0.onnx")

@@ -28,6 +28,7 @@ from constants import (
     SECONDARY_TEXT,
     ACCENT_COLOR,
     get_resource_path,
+    get_data_path,
 )
 
 
@@ -189,8 +190,7 @@ class ChatScreen(QWidget):
         self.chat_client = ChatClient()
         self.chat_client.set_system_prompt(level, subject)
 
-        self.project_root = get_resource_path("")
-        self.models_dir = os.path.join(self.project_root, "models")
+        self.models_dir = get_data_path("models")
         os.makedirs(self.models_dir, exist_ok=True)
 
         self.audio_processor = AudioProcessor(download_root=self.models_dir)
@@ -588,15 +588,38 @@ class ChatScreen(QWidget):
             threading.Thread(target=self.process_voice_input, args=(audio_np,)).start()
 
     def process_voice_input(self, audio_np):
-        if self.audio_processor.model is None:
-            self.signals.update_indicator.emit(
-                "Downloading transcription model...", True
-            )
+        try:
+            if self.audio_processor.model is None:
+                self.signals.update_indicator.emit(
+                    "Downloading transcription model...", True
+                )
 
-        text = self.audio_processor.transcribe(audio_np)
-        self.signals.update_indicator.emit("", False)
-        if text:
-            self.signals.add_message.emit(text, "user", None)
-            self.process_ai_response(text)
-        else:
+            # Check for silent audio before transcribing
+            max_val = 0
+            if audio_np is not None and len(audio_np) > 0:
+                max_val = np.max(np.abs(audio_np))
+
+            if max_val < 0.001:
+                self.signals.update_indicator.emit(
+                    "⚠️ No sound detected. Check microphone permissions.", True
+                )
+                self.signals.set_inputs.emit(True)
+                threading.Timer(5.0, lambda: self.signals.update_indicator.emit("", False)).start()
+                return
+
+            text = self.audio_processor.transcribe(audio_np)
+            self.signals.update_indicator.emit("", False)
+            if text:
+                self.signals.add_message.emit(text, "user", None)
+                self.process_ai_response(text)
+            else:
+                self.signals.update_indicator.emit("⚠️ Could not understand. Try again.", True)
+                self.signals.set_inputs.emit(True)
+                threading.Timer(3.0, lambda: self.signals.update_indicator.emit("", False)).start()
+        except Exception as e:
+            print(f"Transcription error: {e}")
+            self.signals.update_indicator.emit(f"⚠️ Error: {str(e)}", True)
             self.signals.set_inputs.emit(True)
+            threading.Timer(5.0, lambda: self.signals.update_indicator.emit("", False)).start()
+
+
