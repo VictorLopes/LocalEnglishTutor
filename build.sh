@@ -68,7 +68,8 @@ pyinstaller --noconsole --name "${APP_NAME}" \
     --collect-all onnxruntime \
     --collect-all faster_whisper \
     --collect-all kokoro_onnx \
-    --collect-all phonemizer_fork \
+    --collect-all espeakng_loader \
+    --collect-all phonemizer \
     --collect-all language_tags \
     --collect-all segments \
     --collect-all csvw \
@@ -82,6 +83,14 @@ if [ "$PLATFORM" == "Mac" ]; then
     echo "MacOS Executable: dist/${APP_NAME}/${APP_NAME}"
 else
     echo "Executable: dist/${APP_NAME}/${APP_NAME}"
+fi
+
+echo "Zipping the output..."
+if command -v zip >/dev/null 2>&1; then
+    (cd dist && zip -r "${APP_NAME}.zip" "${APP_NAME}")
+    echo "Zip created: dist/${APP_NAME}.zip"
+else
+    echo "WARNING: 'zip' command not found. Skipping zipping step."
 fi
 
 echo ""

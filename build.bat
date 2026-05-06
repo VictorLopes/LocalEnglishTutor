@@ -4,16 +4,26 @@ setlocal enabledelayedexpansion
 echo --- LocalEnglishTutor Windows Build System ---
 
 :: 1. Check for virtual environment
-if exist .venv\Scripts\activate.bat (
+if exist .venv_win\Scripts\activate.bat (
+    echo Using Windows virtual environment .venv_win
+    call .venv_win\Scripts\activate.bat
+) else if exist .venv\Scripts\activate.bat (
     echo Using virtual environment .venv
     call .venv\Scripts\activate.bat
 ) else (
-    echo WARNING: .venv not found. Using system python.
+    echo WARNING: Virtual environment not found.
+    echo Creating a Windows-specific virtual environment is recommended:
+    echo python -m venv .venv_win
+    echo.
 )
 
-:: 2. Install build dependencies
+:: 2. Install dependencies
+echo Updating pip...
+python -m pip install --upgrade pip
+echo Installing project requirements...
+python -m pip install -r requirements.txt
 echo Installing PyInstaller...
-pip install pyinstaller
+python -m pip install pyinstaller
 
 :: 3. Clean previous builds
 echo Cleaning old build files...
@@ -37,7 +47,8 @@ pyinstaller --noconsole --name "%APP_NAME%" ^
     --collect-all onnxruntime ^
     --collect-all faster_whisper ^
     --collect-all kokoro_onnx ^
-    --collect-all phonemizer_fork ^
+    --collect-all espeakng_loader ^
+    --collect-all phonemizer ^
     --collect-all language_tags ^
     --collect-all segments ^
     --collect-all csvw ^
@@ -48,6 +59,12 @@ pyinstaller --noconsole --name "%APP_NAME%" ^
 echo --- Build Complete! ---
 echo Executable: dist\%APP_NAME%\%APP_NAME%.exe
 echo.
+
+echo Zipping the output...
+powershell -Command "Compress-Archive -Path 'dist\%APP_NAME%' -DestinationPath 'dist\%APP_NAME%.zip' -Force"
+echo Zip created: dist\%APP_NAME%.zip
+echo.
+
 echo NOTE: To run the binary, make sure you have Ollama running locally.
 echo The first time you run it, it will download Whisper and Kokoro models into a 'models' folder next to the executable.
 

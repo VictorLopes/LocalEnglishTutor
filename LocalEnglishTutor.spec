@@ -10,7 +10,9 @@ tmp_ret = collect_all('faster_whisper')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('kokoro_onnx')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('phonemizer_fork')
+tmp_ret = collect_all('espeakng_loader')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('phonemizer')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('language_tags')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
@@ -51,7 +53,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icon.icns'],
+    icon=['icon.png'],
 )
 coll = COLLECT(
     exe,
@@ -61,10 +63,4 @@ coll = COLLECT(
     upx=True,
     upx_exclude=[],
     name='LocalEnglishTutor',
-)
-app = BUNDLE(
-    coll,
-    name='LocalEnglishTutor.app',
-    icon='icon.icns',
-    bundle_identifier=None,
 )
