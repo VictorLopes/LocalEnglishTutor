@@ -433,7 +433,7 @@ class ChatScreen(QWidget):
             src_dir = os.path.dirname(screens_dir)
             root_dir = os.path.dirname(src_dir)
 
-            pic_path = os.path.join(root_dir, "profile.png")
+            pic_path = os.path.join(root_dir, "profile.jpg")
             pixmap = QPixmap(pic_path)
             pixmap = pixmap.scaled(
                 50, 50, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation

@@ -50,6 +50,13 @@ class ConversationItem(QFrame):
         name_label.setStyleSheet(
             f"color: {TEXT_COLOR}; font-size: 16px; font-weight: bold; border: none;"
         )
+        name_label.setFixedWidth(250)
+        metrics = name_label.fontMetrics()
+        elided = metrics.elidedText(
+            name_label.text(), Qt.ElideRight, name_label.width()
+        )
+        name_label.setText(elided)
+
         title_layout.addWidget(name_label)
 
         title_layout.addStretch()
@@ -108,9 +115,8 @@ class ConversationItem(QFrame):
         try:
             screens_dir = os.path.dirname(os.path.abspath(__file__))
             root_dir = os.path.dirname(os.path.dirname(screens_dir))
-            pic_path = os.path.join(root_dir, "profile.png")
+            pic_path = os.path.join(root_dir, "profile.jpg")
             if not os.path.exists(pic_path):
-                # Fallback to a color circle if profile.png doesn't exist
                 pixmap = QPixmap(50, 50)
                 pixmap.fill(Qt.transparent)
                 painter = QPainter(pixmap)

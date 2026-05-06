@@ -89,9 +89,17 @@ class SelectionScreen(QWidget):
             layout.addStretch()
 
         for i, option in enumerate(options):
-            btn = QPushButton(option)
+            btn = QPushButton()
             btn.setCursor(Qt.PointingHandCursor)
             btn.setFixedHeight(60)
+            
+            # Elide text
+            max_width = 150 if self.is_grid else 300
+            metrics = btn.fontMetrics()
+            elided_text = metrics.elidedText(option, Qt.ElideRight, max_width)
+            btn.setText(elided_text)
+            btn.setToolTip(option) if elided_text != option else None
+            
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {HEADER_COLOR};
@@ -99,7 +107,7 @@ class SelectionScreen(QWidget):
                     border-radius: 10px;
                     font-size: 16px;
                     border: 1px solid {SECONDARY_TEXT};
-                    padding: 0 20px;
+                    padding: 0 10px;
                     text-align: {"center" if self.is_grid else "left"};
                 }}
                 QPushButton:hover {{
