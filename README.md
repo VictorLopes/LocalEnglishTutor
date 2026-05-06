@@ -2,7 +2,9 @@
 
 A privacy-focused, local AI-powered English tutor with a WhatsApp-inspired interface. Speak or type to interact with your AI tutor, featuring high-quality voice transcription and synthesis—all running locally on your machine.
 
-![App Demo](images/app.gif)
+<p align="center">
+  <img src="images/app.gif" width="450" alt="App Demo">
+</p>
 
 ## Features 🚀
 
