@@ -56,7 +56,18 @@ class AudioProcessor:
         return {}
 
     def _get_input_device(self):
+        # Prefer the system default input (PipeWire/PulseAudio handles mixing and
+        # sample-rate conversion). Raw hw: devices fail when PipeWire owns the hardware.
+        default_idx = sd.default.device[0]
+        if isinstance(default_idx, int) and default_idx >= 0:
+            return default_idx
+
         devices = sd.query_devices()
+        for keyword in ("pulse", "pipewire", "default"):
+            for i, d in enumerate(devices):
+                if d["max_input_channels"] > 0 and keyword in d["name"].lower():
+                    return i
+
         return next(
             (i for i, d in enumerate(devices) if d["max_input_channels"] > 0), None
         )
