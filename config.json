@@ -1,5 +1,5 @@
 {
-    "model": "sam860/lfm2.5:1.2b",
+    "model": "bjoernb/gemma4-e2b-fast",
     "tts_speed": 0.8,
     "tts_voice": "af_sarah",
     "lang": "en-us",
